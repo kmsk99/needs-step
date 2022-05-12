@@ -1,0 +1,43 @@
+version: '3.9'
+
+services:
+  database:
+    image: postgres:14.2-alpine
+    restart: unless-stopped
+    container_name: needs-step-database
+    environment: 
+      CHOKIDAR_USEPOLLING: true
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${DB_USERNAME}"]
+    volumes:
+      - ./needs-step-database-test/data/:/var/lib/postgresql/data
+    ports: 
+      - "5432:5432"
+
+  backend:
+    build: 
+      context: ./needs-step-backend
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    container_name: needs-step-backend
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./needs-step-backend/:/usr/src/app # Dockerfile의 WORKDIR와 맞추기
+      - /usr/src/app/node_modules # 핫 리로드 성능 개선
+      
+    environment: 
+      CHOKIDAR_USEPOLLING: true
+
+    stdin_open: true
+    
+    command: yarn start:dev
+
+# docker compose up -d
+# docker compose down
+# docker compose up --build
+# docker compose -f docker-compose.dev.yml up --build
+# docker-compose up --force-recreate --build -d
