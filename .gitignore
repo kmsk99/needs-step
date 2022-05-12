@@ -2,6 +2,7 @@
 /dist
 /node_modules
 /needs-step-database/data
+/needs-step-database-test/data
 
 # Logs
 logs
