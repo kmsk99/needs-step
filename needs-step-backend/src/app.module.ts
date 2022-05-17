@@ -11,6 +11,10 @@ import { JwtModule } from './jwt/jwt.module';
 import { MailModule } from './mail/mail.module';
 import { AuthModule } from './auth/auth.module';
 import { CommonModule } from './common/common.module';
+import { NeedsModule } from './needs/needs.module';
+import { Need } from './needs/entities/need.entity';
+import { NeedQuestion } from './needs/entities/need-question.entity';
+import { MeasureNeed } from './needs/entities/measure-need.entity';
 
 @Module({
   imports: [
@@ -46,7 +50,7 @@ import { CommonModule } from './common/common.module';
       logging:
         process.env.NODE_ENV !== 'production' &&
         process.env.NODE_ENV !== 'test',
-      entities: [User, Verification],
+      entities: [User, Verification, Need, NeedQuestion, MeasureNeed],
     }),
     GraphQLModule.forRoot({
       playground: process.env.NODE_ENV !== 'production',
@@ -73,6 +77,7 @@ import { CommonModule } from './common/common.module';
     AuthModule,
     UsersModule,
     CommonModule,
+    NeedsModule,
   ],
   controllers: [],
   providers: [],

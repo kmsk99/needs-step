@@ -9,6 +9,7 @@ import * as bcrypt from 'bcrypt';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { InternalServerErrorException } from '@nestjs/common';
 import { IsBoolean, IsEmail, IsEnum, IsString } from 'class-validator';
+import { Need } from 'src/needs/entities/need.entity';
 export enum UserRole {
   Admin = 'Admin',
   Premium = 'Premium',
@@ -46,6 +47,10 @@ export class User extends CoreEntity {
   @Field((type) => Boolean)
   @IsBoolean()
   verified: boolean;
+
+  @Field((type) => [Need])
+  @OneToMany((type) => Need, (need) => need.user)
+  needs: Need[];
 
   @BeforeInsert()
   @BeforeUpdate()
