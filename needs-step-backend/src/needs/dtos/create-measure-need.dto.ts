@@ -6,6 +6,9 @@ import { MeasureNeed } from '../entities/measure-need.entity';
 export class CreateMeasureNeedInput extends PickType(MeasureNeed, ['score']) {
   @Field((type) => Int)
   needQuestionId: number;
+
+  @Field((type) => Int)
+  needId: number;
 }
 
 @ObjectType()

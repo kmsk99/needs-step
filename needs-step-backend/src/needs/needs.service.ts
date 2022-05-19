@@ -2,22 +2,37 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/users/entities/user.entity';
 import { Repository } from 'typeorm';
-import { CreateMeasureNeedInput } from './dtos/create-measure-need.dto';
+import {
+  CreateMeasureNeedInput,
+  CreateMeasureNeedOutput,
+} from './dtos/create-measure-need.dto';
 import {
   CreateNeedQuestionInput,
   CreateNeedQuestionOutput,
 } from './dtos/create-need-question.dto';
 import { CreateNeedOutput } from './dtos/create-need.dto';
 import {
+  DeleteMeasureNeedInput,
+  DeleteMeasureNeedOutput,
+} from './dtos/delete-measure-need.dto';
+import {
   DeleteNeedQuestionInput,
   DeleteNeedQuestionOutput,
-} from './dtos/delete-nedd-question.dto';
+} from './dtos/delete-need-question.dto';
 import { DeleteNeedInput, DeleteNeedOutput } from './dtos/delete-need.dto';
+import {
+  EditMeasureNeedInput,
+  EditMeasureNeedOutput,
+} from './dtos/edit-measure-need.dto';
 import {
   EditNeedQuestionInput,
   EditNeedQuestionOutput,
 } from './dtos/edit-need-question.dto';
+import { FindMeasureNeedByNeedInput } from './dtos/find-measure-need-by-need.dtd';
+import { FindMeasureNeedInput } from './dtos/find-measure-need.dto';
 import { FindNeedQuestionsInput } from './dtos/find-need-questions.dto';
+import { MeasureNeedOutput } from './dtos/measure-need.dto';
+import { MeasureNeedsOutput } from './dtos/measure-needs.dto';
 import { MyNeedsOutput } from './dtos/my-needs.dto';
 import { NeedQuestionsOutput } from './dtos/need-questions.dto';
 import { MeasureNeed } from './entities/measure-need.entity';
@@ -35,24 +50,12 @@ export class NeedService {
     private readonly measureNeeds: Repository<MeasureNeed>,
   ) {}
 
-  async createNeed(
-    authUser: User,
-    createMeasureNeedInputs: CreateMeasureNeedInput[],
-  ): Promise<CreateNeedOutput> {
+  async createNeed(authUser: User): Promise<CreateNeedOutput> {
     try {
-      const newNeed = this.needs.create();
-      newNeed.user = authUser;
+      const newNeed = this.needs.create({
+        user: authUser,
+      });
       await this.needs.save(newNeed);
-
-      for (const createMeasureNeedInput of createMeasureNeedInputs) {
-        const newMeasureNeed = this.measureNeeds.create();
-        const currentNeedQuestion = await this.needQuestions.findOne(
-          createMeasureNeedInput.needQuestionId,
-        );
-        newMeasureNeed.needQuestion = currentNeedQuestion;
-        newMeasureNeed.score = createMeasureNeedInput.score;
-        await this.measureNeeds.save(newMeasureNeed);
-      }
 
       return {
         ok: true,
@@ -131,13 +134,46 @@ export class NeedService {
     }
   }
 
-  async editNeedQuestion(
-    editNeedQuestionInput: EditNeedQuestionInput,
-  ): Promise<EditNeedQuestionOutput> {
+  async allNeedQuestions(): Promise<NeedQuestionsOutput> {
     try {
-      const needQuestion = await this.needQuestions.findOne(
-        editNeedQuestionInput.needQuestionId,
-      );
+      const needQuestions = await this.needQuestions.find();
+      return {
+        ok: true,
+        needQuestions,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not find any need questions',
+      };
+    }
+  }
+
+  async findNeedQuestionsByStage({
+    stage,
+  }: FindNeedQuestionsInput): Promise<NeedQuestionsOutput> {
+    try {
+      const needQuestions = await this.needQuestions.find({ stage });
+      return {
+        ok: true,
+        needQuestions,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not find any need questions',
+      };
+    }
+  }
+
+  async editNeedQuestion({
+    needQuestionId,
+    content,
+    stage,
+    subStage,
+  }: EditNeedQuestionInput): Promise<EditNeedQuestionOutput> {
+    try {
+      const needQuestion = await this.needQuestions.findOne(needQuestionId);
       if (!needQuestion) {
         return {
           ok: false,
@@ -145,7 +181,7 @@ export class NeedService {
         };
       }
       await this.needQuestions.save([
-        { id: editNeedQuestionInput.needQuestionId, ...editNeedQuestionInput },
+        { id: needQuestionId, content, stage, subStage },
       ]);
       return {
         ok: true,
@@ -181,34 +217,168 @@ export class NeedService {
     }
   }
 
-  async allNeedQuestions(): Promise<NeedQuestionsOutput> {
+  async createMeasureNeed(
+    authUser: User,
+    { needId, needQuestionId, score }: CreateMeasureNeedInput,
+  ): Promise<CreateMeasureNeedOutput> {
     try {
-      const needQuestions = await this.needQuestions.find();
+      const currentNeed = await this.needs.findOne(needId);
+      if (!currentNeed) {
+        return {
+          ok: false,
+          error: 'Need not found',
+        };
+      }
+
+      if (currentNeed.userId !== authUser.id) {
+        return {
+          ok: false,
+          error: "You can't edit a need that you dont't own",
+        };
+      }
+
+      const currentNeedQuestion = await this.needQuestions.findOne(
+        needQuestionId,
+      );
+      if (!currentNeedQuestion) {
+        return {
+          ok: false,
+          error: 'Need question not found',
+        };
+      }
+
+      const measureNeed = this.measureNeeds.create({
+        score,
+        user: authUser,
+        needQuestion: currentNeedQuestion,
+        need: currentNeed,
+      });
+      await this.measureNeeds.save(measureNeed);
+
       return {
         ok: true,
-        needQuestions,
       };
     } catch {
       return {
         ok: false,
-        error: 'Could not find any need questions',
+        error: 'Could not create measure need',
       };
     }
   }
 
-  async findNeedQuestionsByStage({
-    stage,
-  }: FindNeedQuestionsInput): Promise<NeedQuestionsOutput> {
+  async findMeasureNeed(
+    authUser: User,
+    { measureNeedId }: FindMeasureNeedInput,
+  ): Promise<MeasureNeedOutput> {
     try {
-      const needQuestions = await this.needQuestions.find({ stage });
+      const measureNeed = await this.measureNeeds.findOne(measureNeedId);
+
+      if (measureNeed.userId !== authUser.id) {
+        return {
+          ok: false,
+          error: "You can't find measure need that you dont't own",
+        };
+      }
+
       return {
         ok: true,
-        needQuestions,
+        measureNeed,
       };
     } catch {
       return {
         ok: false,
-        error: 'Could not find any need questions',
+        error: 'Could not find any measure need',
+      };
+    }
+  }
+
+  async findMeasureNeedByNeed(
+    authUser: User,
+    { needId }: FindMeasureNeedByNeedInput,
+  ): Promise<MeasureNeedsOutput> {
+    try {
+      const currentNeed = await this.needs.findOne(needId);
+
+      if (currentNeed.userId !== authUser.id) {
+        return {
+          ok: false,
+          error: "You can't find need that you dont't own",
+        };
+      }
+
+      const measureNeeds = currentNeed.measureNeeds;
+
+      return {
+        ok: true,
+        measureNeeds,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not find any measure need',
+      };
+    }
+  }
+
+  async editMeasureNeed(
+    authUser: User,
+    { measureNeedId, score }: EditMeasureNeedInput,
+  ): Promise<EditMeasureNeedOutput> {
+    try {
+      const measureNeed = await this.measureNeeds.findOne(measureNeedId);
+      if (!measureNeed) {
+        return {
+          ok: false,
+          error: 'Measure need not found',
+        };
+      }
+
+      if (measureNeed.userId !== authUser.id) {
+        return {
+          ok: false,
+          error: "You can't edit a measure need that you dont't own",
+        };
+      }
+
+      await this.measureNeeds.save([{ id: measureNeedId, score }]);
+
+      return {
+        ok: true,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not edit measure need',
+      };
+    }
+  }
+
+  async deleteMeasureNeed(
+    authUser: User,
+    { measureNeedId }: DeleteMeasureNeedInput,
+  ): Promise<DeleteMeasureNeedOutput> {
+    try {
+      const measureNeed = await this.measureNeeds.findOne(measureNeedId);
+      if (!measureNeed) {
+        return {
+          ok: false,
+          error: 'Measure need not found',
+        };
+      }
+      if (measureNeed.userId !== authUser.id) {
+        return {
+          ok: false,
+          error: "You can't delete a measure need that you dont't own",
+        };
+      }
+      await this.measureNeeds.delete(measureNeedId);
+      return {
+        ok: true,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not delete measure need',
       };
     }
   }
