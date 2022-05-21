@@ -28,7 +28,7 @@ import {
   EditNeedQuestionInput,
   EditNeedQuestionOutput,
 } from './dtos/edit-need-question.dto';
-import { FindMeasureNeedByNeedInput } from './dtos/find-measure-need-by-need.dtd';
+import { FindMeasureNeedByNeedInput } from './dtos/find-measure-need-by-need.dto';
 import { FindMeasureNeedInput } from './dtos/find-measure-need.dto';
 import { FindNeedQuestionsInput } from './dtos/find-need-questions.dto';
 import { MeasureNeedOutput } from './dtos/measure-need.dto';
@@ -180,9 +180,12 @@ export class NeedService {
           error: 'Need question not found',
         };
       }
-      await this.needQuestions.save([
-        { id: needQuestionId, content, stage, subStage },
-      ]);
+      await this.needQuestions.save({
+        id: needQuestionId,
+        content,
+        stage,
+        subStage,
+      });
       return {
         ok: true,
       };
@@ -226,7 +229,7 @@ export class NeedService {
       if (!currentNeed) {
         return {
           ok: false,
-          error: 'Need not found',
+          error: 'Measure need not found',
         };
       }
 
