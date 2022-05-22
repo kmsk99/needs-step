@@ -229,7 +229,7 @@ export class NeedService {
       if (!currentNeed) {
         return {
           ok: false,
-          error: 'Measure need not found',
+          error: 'Need not found',
         };
       }
 
@@ -275,6 +275,13 @@ export class NeedService {
   ): Promise<MeasureNeedOutput> {
     try {
       const measureNeed = await this.measureNeeds.findOne(measureNeedId);
+
+      if (!measureNeed) {
+        return {
+          ok: false,
+          error: 'Measure need not found',
+        };
+      }
 
       if (measureNeed.userId !== authUser.id) {
         return {
@@ -343,7 +350,7 @@ export class NeedService {
         };
       }
 
-      await this.measureNeeds.save([{ id: measureNeedId, score }]);
+      await this.measureNeeds.save({ id: measureNeedId, score });
 
       return {
         ok: true,

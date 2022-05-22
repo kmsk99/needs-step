@@ -55,6 +55,7 @@ describe('MailService', () => {
       );
     });
   });
+
   describe('sendEmail', () => {
     it('sends email', async () => {
       const ok = await service.sendEmail('', '', []);
@@ -67,6 +68,7 @@ describe('MailService', () => {
       );
       expect(ok).toEqual(true);
     });
+
     it('fails on error', async () => {
       jest.spyOn(got, 'post').mockImplementation(() => {
         throw new Error();
