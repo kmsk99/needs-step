@@ -15,9 +15,15 @@ jest.mock('got', () => {
 
 const GRAPHQL_ENDPOINT = '/graphql';
 
-const testUser = {
+const freeUser = {
   email: 'test@test.com',
   username: 'tester',
+  password: '123456',
+};
+
+const adminUser = {
+  email: 'admin@test.com',
+  username: 'admin',
   password: '123456',
 };
 
@@ -25,12 +31,15 @@ describe('UserModule (e2e)', () => {
   let app: INestApplication;
   let usersRepository: Repository<User>;
   let verificationsRepository: Repository<Verification>;
-  let jwtToken: string;
+  let freeJwtToken: string;
+  let adminJwtToken: string;
 
   const baseTest = () => request(app.getHttpServer()).post(GRAPHQL_ENDPOINT);
   const publicTest = (query: string) => baseTest().send({ query });
-  const privateTest = (query: string) =>
-    baseTest().set('X-JWT', jwtToken).send({ query });
+  const privateFreeTest = (query: string) =>
+    baseTest().set('X-JWT', freeJwtToken).send({ query });
+  const privateAdminTest = (query: string) =>
+    baseTest().set('X-JWT', adminJwtToken).send({ query });
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -54,10 +63,38 @@ describe('UserModule (e2e)', () => {
       return publicTest(`
         mutation {
           createAccount(input: {
-            email:"${testUser.email}",
-            password:"${testUser.password}",
-            username:"${testUser.username}",
+            email:"${freeUser.email}",
+            password:"${freeUser.password}",
+            username:"${freeUser.username}",
             role:Free
+          }) {
+            ok
+            error
+          }
+        }
+        `)
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                createAccount: { ok, error },
+              },
+            },
+          } = res;
+          expect(ok).toBe(true);
+          expect(error).toBe(null);
+        });
+    });
+
+    it('should create admin account', () => {
+      return publicTest(`
+        mutation {
+          createAccount(input: {
+            email:"${adminUser.email}",
+            password:"${adminUser.password}",
+            username:"${adminUser.username}",
+            role:Admin
           }) {
             ok
             error
@@ -82,9 +119,9 @@ describe('UserModule (e2e)', () => {
       return publicTest(`
           mutation {
             createAccount(input: {
-              email:"${testUser.email}",
-              password:"${testUser.password}",
-              username:"${testUser.username}",
+              email:"${freeUser.email}",
+              password:"${freeUser.password}",
+              username:"${freeUser.username}",
               role:Free
             }) {
               ok
@@ -112,8 +149,8 @@ describe('UserModule (e2e)', () => {
       return publicTest(`
           mutation {
             login(input:{
-              email:"${testUser.email}",
-              password:"${testUser.password}",
+              email:"${freeUser.email}",
+              password:"${freeUser.password}",
             }) {
               ok
               error
@@ -131,7 +168,34 @@ describe('UserModule (e2e)', () => {
           expect(login.ok).toBe(true);
           expect(login.error).toBe(null);
           expect(login.token).toEqual(expect.any(String));
-          jwtToken = login.token;
+          freeJwtToken = login.token;
+        });
+    });
+
+    it('should login admin with correct credentials', () => {
+      return publicTest(`
+          mutation {
+            login(input:{
+              email:"${adminUser.email}",
+              password:"${adminUser.password}",
+            }) {
+              ok
+              error
+              token
+            }
+          }
+        `)
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: { login },
+            },
+          } = res;
+          expect(login.ok).toBe(true);
+          expect(login.error).toBe(null);
+          expect(login.token).toEqual(expect.any(String));
+          adminJwtToken = login.token;
         });
     });
 
@@ -139,7 +203,7 @@ describe('UserModule (e2e)', () => {
       return publicTest(`
           mutation {
             login(input:{
-              email:"${testUser.email}",
+              email:"${freeUser.email}",
               password:"xxx",
             }) {
               ok
@@ -164,12 +228,14 @@ describe('UserModule (e2e)', () => {
 
   describe('userProfile', () => {
     let userId: number;
+
     beforeAll(async () => {
-      const [user] = await usersRepository.find();
-      userId = user.id;
+      const user = await usersRepository.find();
+      userId = user[0].id;
     });
+
     it("should see a user's profile", () => {
-      return privateTest(`
+      return privateAdminTest(`
           {
             userProfile(userId:${userId}){
               ok
@@ -198,8 +264,9 @@ describe('UserModule (e2e)', () => {
           expect(id).toBe(userId);
         });
     });
+
     it('should not find a profile', () => {
-      return privateTest(`
+      return privateAdminTest(`
           {
             userProfile(userId:666){
               ok
@@ -224,15 +291,38 @@ describe('UserModule (e2e)', () => {
           expect(user).toBe(null);
         });
     });
+
+    it('should not find a profile', () => {
+      return privateFreeTest(`
+          {
+            userProfile(userId:${userId}){
+              ok
+              error
+              user {
+                id
+              }
+            }
+          }
+        `)
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: { data, errors },
+          } = res;
+          expect(data).toBe(null);
+          expect(errors.length).not.toBe(0);
+        });
+    });
   });
 
   describe('me', () => {
     it('should find my profile', () => {
-      return privateTest(`
+      return privateFreeTest(`
           {
             me {
               email
               username
+              role
             }
           }
         `)
@@ -241,14 +331,16 @@ describe('UserModule (e2e)', () => {
           const {
             body: {
               data: {
-                me: { email, username },
+                me: { email, username, role },
               },
             },
           } = res;
-          expect(email).toBe(testUser.email);
-          expect(username).toBe(testUser.username);
+          expect(email).toBe(freeUser.email);
+          expect(username).toBe(freeUser.username);
+          expect(role).toBe('Free');
         });
     });
+
     it('should not allow logged out user', () => {
       return publicTest(`
           {
@@ -272,7 +364,7 @@ describe('UserModule (e2e)', () => {
   describe('editProfile', () => {
     const NEW_EMAIL = 'nico@new.com';
     it('should change email', () => {
-      return privateTest(`
+      return privateFreeTest(`
             mutation {
               editProfile(input:{
                 email: "${NEW_EMAIL}"
@@ -295,8 +387,9 @@ describe('UserModule (e2e)', () => {
           expect(error).toBe(null);
         });
     });
+
     it('should have new email', () => {
-      return privateTest(`
+      return privateFreeTest(`
           {
             me {
               email
@@ -347,6 +440,7 @@ describe('UserModule (e2e)', () => {
           expect(error).toBe(null);
         });
     });
+
     it('should fail on verification code not found', () => {
       return publicTest(`
           mutation {

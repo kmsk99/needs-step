@@ -6,7 +6,7 @@ services:
     restart: unless-stopped
     container_name: needs-step-database-test
     environment: 
-      CHOKIDAR_USEPOLLING: true
+      CHOKIDAR_USEPOLLING: "true"
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
@@ -29,7 +29,7 @@ services:
       - /usr/src/app/node_modules # 핫 리로드 성능 개선
       
     environment: 
-      CHOKIDAR_USEPOLLING: true
+      CHOKIDAR_USEPOLLING: "true"
 
     stdin_open: true
     
