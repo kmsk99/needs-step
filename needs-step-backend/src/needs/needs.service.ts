@@ -28,7 +28,7 @@ import {
   EditNeedQuestionInput,
   EditNeedQuestionOutput,
 } from './dtos/edit-need-question.dto';
-import { FindMeasureNeedByNeedInput } from './dtos/find-measure-need-by-need.dto';
+import { findMeasureNeedsByNeedInput } from './dtos/find-measure-needs-by-need.dto';
 import { FindMeasureNeedInput } from './dtos/find-measure-need.dto';
 import { FindNeedQuestionsInput } from './dtos/find-need-questions.dto';
 import { MeasureNeedOutput } from './dtos/measure-need.dto';
@@ -302,9 +302,9 @@ export class NeedService {
     }
   }
 
-  async findMeasureNeedByNeed(
+  async findMeasureNeedsByNeed(
     authUser: User,
-    { needId }: FindMeasureNeedByNeedInput,
+    { needId }: findMeasureNeedsByNeedInput,
   ): Promise<MeasureNeedsOutput> {
     try {
       const currentNeed = await this.needs.findOne(needId);

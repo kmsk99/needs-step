@@ -6,6 +6,9 @@ import { getConnection, Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from 'src/users/entities/user.entity';
 import { Verification } from 'src/users/entities/verification.entity';
+import { Need } from 'src/needs/entities/need.entity';
+import { NeedQuestion } from 'src/needs/entities/need-question.entity';
+import { MeasureNeed } from 'src/needs/entities/measure-need.entity';
 
 jest.mock('got', () => {
   return {
@@ -27,10 +30,13 @@ const adminUser = {
   password: '123456',
 };
 
-describe('UserModule (e2e)', () => {
+describe('e2e', () => {
   let app: INestApplication;
   let usersRepository: Repository<User>;
   let verificationsRepository: Repository<Verification>;
+  let needsRepository: Repository<Need>;
+  let needQuestionsRepository: Repository<NeedQuestion>;
+  let measureNeedsRepository: Repository<MeasureNeed>;
   let freeJwtToken: string;
   let adminJwtToken: string;
 
@@ -50,6 +56,13 @@ describe('UserModule (e2e)', () => {
     verificationsRepository = module.get<Repository<Verification>>(
       getRepositoryToken(Verification),
     );
+    needsRepository = module.get<Repository<Need>>(getRepositoryToken(Need));
+    needQuestionsRepository = module.get<Repository<NeedQuestion>>(
+      getRepositoryToken(NeedQuestion),
+    );
+    measureNeedsRepository = module.get<Repository<MeasureNeed>>(
+      getRepositoryToken(MeasureNeed),
+    );
     await app.init();
   });
 
@@ -58,9 +71,10 @@ describe('UserModule (e2e)', () => {
     app.close();
   });
 
-  describe('createAccount', () => {
-    it('should create account', () => {
-      return publicTest(`
+  describe('UserModule', () => {
+    describe('createAccount', () => {
+      it('should create account', () => {
+        return publicTest(`
         mutation {
           createAccount(input: {
             email:"${freeUser.email}",
@@ -73,22 +87,22 @@ describe('UserModule (e2e)', () => {
           }
         }
         `)
-        .expect(200)
-        .expect((res) => {
-          const {
-            body: {
-              data: {
-                createAccount: { ok, error },
+          .expect(200)
+          .expect((res) => {
+            const {
+              body: {
+                data: {
+                  createAccount: { ok, error },
+                },
               },
-            },
-          } = res;
-          expect(ok).toBe(true);
-          expect(error).toBe(null);
-        });
-    });
+            } = res;
+            expect(ok).toBe(true);
+            expect(error).toBe(null);
+          });
+      });
 
-    it('should create admin account', () => {
-      return publicTest(`
+      it('should create admin account', () => {
+        return publicTest(`
         mutation {
           createAccount(input: {
             email:"${adminUser.email}",
@@ -101,22 +115,22 @@ describe('UserModule (e2e)', () => {
           }
         }
         `)
-        .expect(200)
-        .expect((res) => {
-          const {
-            body: {
-              data: {
-                createAccount: { ok, error },
+          .expect(200)
+          .expect((res) => {
+            const {
+              body: {
+                data: {
+                  createAccount: { ok, error },
+                },
               },
-            },
-          } = res;
-          expect(ok).toBe(true);
-          expect(error).toBe(null);
-        });
-    });
+            } = res;
+            expect(ok).toBe(true);
+            expect(error).toBe(null);
+          });
+      });
 
-    it('should fail if account already exists', () => {
-      return publicTest(`
+      it('should fail if account already exists', () => {
+        return publicTest(`
           mutation {
             createAccount(input: {
               email:"${freeUser.email}",
@@ -129,24 +143,24 @@ describe('UserModule (e2e)', () => {
             }
           }
         `)
-        .expect(200)
-        .expect((res) => {
-          const {
-            body: {
-              data: {
-                createAccount: { ok, error },
+          .expect(200)
+          .expect((res) => {
+            const {
+              body: {
+                data: {
+                  createAccount: { ok, error },
+                },
               },
-            },
-          } = res;
-          expect(ok).toBe(false);
-          expect(error).toBe('There is a user with that email already');
-        });
+            } = res;
+            expect(ok).toBe(false);
+            expect(error).toBe('There is a user with that email already');
+          });
+      });
     });
-  });
 
-  describe('login', () => {
-    it('should login with correct credentials', () => {
-      return publicTest(`
+    describe('login', () => {
+      it('should login with correct credentials', () => {
+        return publicTest(`
           mutation {
             login(input:{
               email:"${freeUser.email}",
@@ -158,22 +172,22 @@ describe('UserModule (e2e)', () => {
             }
           }
         `)
-        .expect(200)
-        .expect((res) => {
-          const {
-            body: {
-              data: { login },
-            },
-          } = res;
-          expect(login.ok).toBe(true);
-          expect(login.error).toBe(null);
-          expect(login.token).toEqual(expect.any(String));
-          freeJwtToken = login.token;
-        });
-    });
+          .expect(200)
+          .expect((res) => {
+            const {
+              body: {
+                data: { login },
+              },
+            } = res;
+            expect(login.ok).toBe(true);
+            expect(login.error).toBe(null);
+            expect(login.token).toEqual(expect.any(String));
+            freeJwtToken = login.token;
+          });
+      });
 
-    it('should login admin with correct credentials', () => {
-      return publicTest(`
+      it('should login admin with correct credentials', () => {
+        return publicTest(`
           mutation {
             login(input:{
               email:"${adminUser.email}",
@@ -185,22 +199,22 @@ describe('UserModule (e2e)', () => {
             }
           }
         `)
-        .expect(200)
-        .expect((res) => {
-          const {
-            body: {
-              data: { login },
-            },
-          } = res;
-          expect(login.ok).toBe(true);
-          expect(login.error).toBe(null);
-          expect(login.token).toEqual(expect.any(String));
-          adminJwtToken = login.token;
-        });
-    });
+          .expect(200)
+          .expect((res) => {
+            const {
+              body: {
+                data: { login },
+              },
+            } = res;
+            expect(login.ok).toBe(true);
+            expect(login.error).toBe(null);
+            expect(login.token).toEqual(expect.any(String));
+            adminJwtToken = login.token;
+          });
+      });
 
-    it('should not be able to login with wrong credentials', () => {
-      return publicTest(`
+      it('should not be able to login with wrong credentials', () => {
+        return publicTest(`
           mutation {
             login(input:{
               email:"${freeUser.email}",
@@ -212,30 +226,30 @@ describe('UserModule (e2e)', () => {
             }
           }
         `)
-        .expect(200)
-        .expect((res) => {
-          const {
-            body: {
-              data: { login },
-            },
-          } = res;
-          expect(login.ok).toBe(false);
-          expect(login.error).toBe('Wrong password');
-          expect(login.token).toBe(null);
-        });
-    });
-  });
-
-  describe('userProfile', () => {
-    let userId: number;
-
-    beforeAll(async () => {
-      const user = await usersRepository.find();
-      userId = user[0].id;
+          .expect(200)
+          .expect((res) => {
+            const {
+              body: {
+                data: { login },
+              },
+            } = res;
+            expect(login.ok).toBe(false);
+            expect(login.error).toBe('Wrong password');
+            expect(login.token).toBe(null);
+          });
+      });
     });
 
-    it("should see a user's profile", () => {
-      return privateAdminTest(`
+    describe('userProfile', () => {
+      let userId: number;
+
+      beforeAll(async () => {
+        const user = await usersRepository.find();
+        userId = user[0].id;
+      });
+
+      it("should see a user's profile", () => {
+        return privateAdminTest(`
           {
             userProfile(userId:${userId}){
               ok
@@ -246,27 +260,27 @@ describe('UserModule (e2e)', () => {
             }
           }
         `)
-        .expect(200)
-        .expect((res) => {
-          const {
-            body: {
-              data: {
-                userProfile: {
-                  ok,
-                  error,
-                  user: { id },
+          .expect(200)
+          .expect((res) => {
+            const {
+              body: {
+                data: {
+                  userProfile: {
+                    ok,
+                    error,
+                    user: { id },
+                  },
                 },
               },
-            },
-          } = res;
-          expect(ok).toBe(true);
-          expect(error).toBe(null);
-          expect(id).toBe(userId);
-        });
-    });
+            } = res;
+            expect(ok).toBe(true);
+            expect(error).toBe(null);
+            expect(id).toBe(userId);
+          });
+      });
 
-    it('should not find a profile', () => {
-      return privateAdminTest(`
+      it('should not find a profile', () => {
+        return privateAdminTest(`
           {
             userProfile(userId:666){
               ok
@@ -277,23 +291,23 @@ describe('UserModule (e2e)', () => {
             }
           }
         `)
-        .expect(200)
-        .expect((res) => {
-          const {
-            body: {
-              data: {
-                userProfile: { ok, error, user },
+          .expect(200)
+          .expect((res) => {
+            const {
+              body: {
+                data: {
+                  userProfile: { ok, error, user },
+                },
               },
-            },
-          } = res;
-          expect(ok).toBe(false);
-          expect(error).toBe('User Not Found');
-          expect(user).toBe(null);
-        });
-    });
+            } = res;
+            expect(ok).toBe(false);
+            expect(error).toBe('User Not Found');
+            expect(user).toBe(null);
+          });
+      });
 
-    it('should not find a profile', () => {
-      return privateFreeTest(`
+      it('should not find a profile', () => {
+        return privateFreeTest(`
           {
             userProfile(userId:${userId}){
               ok
@@ -304,20 +318,20 @@ describe('UserModule (e2e)', () => {
             }
           }
         `)
-        .expect(200)
-        .expect((res) => {
-          const {
-            body: { data, errors },
-          } = res;
-          expect(data).toBe(null);
-          expect(errors.length).not.toBe(0);
-        });
+          .expect(200)
+          .expect((res) => {
+            const {
+              body: { data, errors },
+            } = res;
+            expect(data).toBe(null);
+            expect(errors.length).not.toBe(0);
+          });
+      });
     });
-  });
 
-  describe('me', () => {
-    it('should find my profile', () => {
-      return privateFreeTest(`
+    describe('me', () => {
+      it('should find my profile', () => {
+        return privateFreeTest(`
           {
             me {
               email
@@ -326,23 +340,23 @@ describe('UserModule (e2e)', () => {
             }
           }
         `)
-        .expect(200)
-        .expect((res) => {
-          const {
-            body: {
-              data: {
-                me: { email, username, role },
+          .expect(200)
+          .expect((res) => {
+            const {
+              body: {
+                data: {
+                  me: { email, username, role },
+                },
               },
-            },
-          } = res;
-          expect(email).toBe(freeUser.email);
-          expect(username).toBe(freeUser.username);
-          expect(role).toBe('Free');
-        });
-    });
+            } = res;
+            expect(email).toBe(freeUser.email);
+            expect(username).toBe(freeUser.username);
+            expect(role).toBe('Free');
+          });
+      });
 
-    it('should not allow logged out user', () => {
-      return publicTest(`
+      it('should not allow logged out user', () => {
+        return publicTest(`
           {
             me {
               email
@@ -350,21 +364,21 @@ describe('UserModule (e2e)', () => {
             }
           }
         `)
-        .expect(200)
-        .expect((res) => {
-          const {
-            body: { errors },
-          } = res;
-          const [error] = errors;
-          expect(error.message).toBe('Forbidden resource');
-        });
+          .expect(200)
+          .expect((res) => {
+            const {
+              body: { errors },
+            } = res;
+            const [error] = errors;
+            expect(error.message).toBe('Forbidden resource');
+          });
+      });
     });
-  });
 
-  describe('editProfile', () => {
-    const NEW_EMAIL = 'nico@new.com';
-    it('should change email', () => {
-      return privateFreeTest(`
+    describe('editProfile', () => {
+      const NEW_EMAIL = 'nico@new.com';
+      it('should change email', () => {
+        return privateFreeTest(`
             mutation {
               editProfile(input:{
                 email: "${NEW_EMAIL}"
@@ -374,50 +388,50 @@ describe('UserModule (e2e)', () => {
               }
             }
         `)
-        .expect(200)
-        .expect((res) => {
-          const {
-            body: {
-              data: {
-                editProfile: { ok, error },
+          .expect(200)
+          .expect((res) => {
+            const {
+              body: {
+                data: {
+                  editProfile: { ok, error },
+                },
               },
-            },
-          } = res;
-          expect(ok).toBe(true);
-          expect(error).toBe(null);
-        });
-    });
+            } = res;
+            expect(ok).toBe(true);
+            expect(error).toBe(null);
+          });
+      });
 
-    it('should have new email', () => {
-      return privateFreeTest(`
+      it('should have new email', () => {
+        return privateFreeTest(`
           {
             me {
               email
             }
           }
         `)
-        .expect(200)
-        .expect((res) => {
-          const {
-            body: {
-              data: {
-                me: { email },
+          .expect(200)
+          .expect((res) => {
+            const {
+              body: {
+                data: {
+                  me: { email },
+                },
               },
-            },
-          } = res;
-          expect(email).toBe(NEW_EMAIL);
-        });
+            } = res;
+            expect(email).toBe(NEW_EMAIL);
+          });
+      });
     });
-  });
 
-  describe('verifyEmail', () => {
-    let verificationCode: string;
-    beforeAll(async () => {
-      const [verification] = await verificationsRepository.find();
-      verificationCode = verification.code;
-    });
-    it('should verify email', () => {
-      return publicTest(`
+    describe('verifyEmail', () => {
+      let verificationCode: string;
+      beforeAll(async () => {
+        const [verification] = await verificationsRepository.find();
+        verificationCode = verification.code;
+      });
+      it('should verify email', () => {
+        return publicTest(`
           mutation {
             verifyEmail(input:{
               code:"${verificationCode}"
@@ -427,22 +441,22 @@ describe('UserModule (e2e)', () => {
             }
           }
         `)
-        .expect(200)
-        .expect((res) => {
-          const {
-            body: {
-              data: {
-                verifyEmail: { ok, error },
+          .expect(200)
+          .expect((res) => {
+            const {
+              body: {
+                data: {
+                  verifyEmail: { ok, error },
+                },
               },
-            },
-          } = res;
-          expect(ok).toBe(true);
-          expect(error).toBe(null);
-        });
-    });
+            } = res;
+            expect(ok).toBe(true);
+            expect(error).toBe(null);
+          });
+      });
 
-    it('should fail on verification code not found', () => {
-      return publicTest(`
+      it('should fail on verification code not found', () => {
+        return publicTest(`
           mutation {
             verifyEmail(input:{
               code:"xxxxx"
@@ -452,18 +466,101 @@ describe('UserModule (e2e)', () => {
             }
           }
         `)
-        .expect(200)
-        .expect((res) => {
-          const {
-            body: {
-              data: {
-                verifyEmail: { ok, error },
+          .expect(200)
+          .expect((res) => {
+            const {
+              body: {
+                data: {
+                  verifyEmail: { ok, error },
+                },
               },
-            },
-          } = res;
-          expect(ok).toBe(false);
-          expect(error).toBe('Verification not found.');
-        });
+            } = res;
+            expect(ok).toBe(false);
+            expect(error).toBe('Verification not found.');
+          });
+      });
+    });
+  });
+
+  describe('NeedModule', () => {
+    describe('Need', () => {
+      describe('createNeed', () => {
+        it.todo('should create need');
+        it.todo('should fail if not logged in');
+      });
+      describe('myNeed', () => {
+        it.todo('should find my need');
+        it.todo('should fail if not logged in');
+      });
+      describe('deleteNeed', () => {
+        it.todo('should delete need');
+        it.todo('should fail if not logged in');
+        it.todo('should fail if not my need');
+        it.todo('should fail if not exists');
+      });
+    });
+    describe('NeedQuestion', () => {
+      describe('createNeedQuestion', () => {
+        it.todo('should create needQuestion');
+        it.todo('should fail if not logged in');
+        it.todo('should fail if not admin');
+      });
+      describe('allNeedQuestions', () => {
+        it.todo('should find all needQuestions');
+        it.todo('should fail if not logged in');
+      });
+      describe('findNeedQuestionsByStage', () => {
+        it.todo('should find all needQuestions by stage');
+        it.todo('should fail if not logged in');
+        it.todo('should find empty stage');
+      });
+      describe('editNeedQuestion', () => {
+        it.todo('should edit stage');
+        it.todo('should edit subStage');
+        it.todo('should edit content');
+        it.todo('should fail if not exists');
+        it.todo('should fail if not admin');
+        it.todo('should fail if not logged in');
+      });
+      describe('deleteNeedQuestion', () => {
+        it.todo('should edit stage');
+        it.todo('should fail if not exists');
+        it.todo('should fail if not admin');
+        it.todo('should fail if not logged in');
+      });
+    });
+    describe('MeasureNeed', () => {
+      describe('createMeasureNeed', () => {
+        it.todo('should create measureNeed');
+        it.todo('should fail if need not exists');
+        it.todo('should fail if need question not exists');
+        it.todo('should fail if not mine');
+        it.todo('should fail if not logged in');
+      });
+      describe('findMeasureNeed', () => {
+        it.todo('should find measureNeed');
+        it.todo('should fail if not exists');
+        it.todo('should fail if not mine');
+        it.todo('should fail if not logged in');
+      });
+      describe('findMeasureNeedsByNeed', () => {
+        it.todo('should find measureNeeds');
+        it.todo('should fail if not exists');
+        it.todo('should fail if not mine');
+        it.todo('should fail if not logged in');
+      });
+      describe('editMeasureNeed', () => {
+        it.todo('should edit measureNeeds score');
+        it.todo('should fail if not exists');
+        it.todo('should fail if not mine');
+        it.todo('should fail if not logged in');
+      });
+      describe('deleteMeasureNeed', () => {
+        it.todo('should delete measureNeeds');
+        it.todo('should fail if not exists');
+        it.todo('should fail if not mine');
+        it.todo('should fail if not logged in');
+      });
     });
   });
 });

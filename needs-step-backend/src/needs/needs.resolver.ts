@@ -28,8 +28,8 @@ import {
   EditNeedQuestionInput,
   EditNeedQuestionOutput,
 } from './dtos/edit-need-question.dto';
-import { FindMeasureNeedByNeedInput } from './dtos/find-measure-need-by-need.dto';
 import { FindMeasureNeedInput } from './dtos/find-measure-need.dto';
+import { findMeasureNeedsByNeedInput } from './dtos/find-measure-needs-by-need.dto';
 import { FindNeedQuestionsInput } from './dtos/find-need-questions.dto';
 import { MeasureNeedOutput } from './dtos/measure-need.dto';
 import { MeasureNeedsOutput } from './dtos/measure-needs.dto';
@@ -135,14 +135,14 @@ export class MeasureNeedResolver {
 
   @Query((returns) => MeasureNeedsOutput)
   @Role(['Any'])
-  async findMeasureNeedByNeed(
+  async findMeasureNeedsByNeed(
     @AuthUser() authUser: User,
     @Args('input')
-    findMeasureNeedByNeedInput: FindMeasureNeedByNeedInput,
+    findMeasureNeedsByNeedInput: findMeasureNeedsByNeedInput,
   ): Promise<MeasureNeedsOutput> {
-    return this.needService.findMeasureNeedByNeed(
+    return this.needService.findMeasureNeedsByNeed(
       authUser,
-      findMeasureNeedByNeedInput,
+      findMeasureNeedsByNeedInput,
     );
   }
 

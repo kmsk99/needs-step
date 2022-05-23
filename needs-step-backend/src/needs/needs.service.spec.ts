@@ -713,7 +713,7 @@ describe('NeedService', () => {
       });
     });
 
-    describe('findMeasureNeedByNeed', () => {
+    describe('findMeasureNeedsByNeed', () => {
       const userArgs = {
         id: 1,
       } as User;
@@ -725,7 +725,7 @@ describe('NeedService', () => {
         userId: 1,
         measureNeeds: [measureNeedArgs],
       } as Need;
-      const findMeasureNeedByNeedInput = {
+      const findMeasureNeedsByNeedInput = {
         needId: 1,
       };
       const otherUserArgs = {
@@ -735,13 +735,13 @@ describe('NeedService', () => {
       it('success', async () => {
         needsRepository.findOne.mockResolvedValue(needArgs);
 
-        const result = await service.findMeasureNeedByNeed(
+        const result = await service.findMeasureNeedsByNeed(
           userArgs,
-          findMeasureNeedByNeedInput,
+          findMeasureNeedsByNeedInput,
         );
 
         expect(needsRepository.findOne).toBeCalledWith(
-          findMeasureNeedByNeedInput.needId,
+          findMeasureNeedsByNeedInput.needId,
         );
         expect(needsRepository.findOne).toBeCalledTimes(1);
 
@@ -751,13 +751,13 @@ describe('NeedService', () => {
       it('cant find dont own', async () => {
         needsRepository.findOne.mockResolvedValue(needArgs);
 
-        const result = await service.findMeasureNeedByNeed(
+        const result = await service.findMeasureNeedsByNeed(
           otherUserArgs,
-          findMeasureNeedByNeedInput,
+          findMeasureNeedsByNeedInput,
         );
 
         expect(needsRepository.findOne).toBeCalledWith(
-          findMeasureNeedByNeedInput.needId,
+          findMeasureNeedsByNeedInput.needId,
         );
         expect(needsRepository.findOne).toBeCalledTimes(1);
 
@@ -770,13 +770,13 @@ describe('NeedService', () => {
       it('fail on exception', async () => {
         needsRepository.findOne.mockRejectedValue(new Error());
 
-        const result = await service.findMeasureNeedByNeed(
+        const result = await service.findMeasureNeedsByNeed(
           userArgs,
-          findMeasureNeedByNeedInput,
+          findMeasureNeedsByNeedInput,
         );
 
         expect(needsRepository.findOne).toBeCalledWith(
-          findMeasureNeedByNeedInput.needId,
+          findMeasureNeedsByNeedInput.needId,
         );
         expect(needsRepository.findOne).toBeCalledTimes(1);
 
