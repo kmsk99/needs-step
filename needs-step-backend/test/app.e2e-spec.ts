@@ -324,7 +324,7 @@ describe('e2e', () => {
               body: { data, errors },
             } = res;
             expect(data).toBe(null);
-            expect(errors.length).not.toBe(0);
+            expect(errors).not.toHaveLength(0);
           });
       });
     });
@@ -483,45 +483,722 @@ describe('e2e', () => {
   });
 
   describe('NeedModule', () => {
+    let needId1: number;
+    let needId2: number;
+    let needId3: number;
+
     describe('Need', () => {
       describe('createNeed', () => {
-        it.todo('should create need');
-        it.todo('should fail if not logged in');
+        it('should create need1', () => {
+          return privateFreeTest(`
+          mutation {
+            createNeed {
+              ok
+              error
+              needId
+            }
+          }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    createNeed: { ok, error, needId },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(true);
+              expect(error).toBe(null);
+              expect(typeof needId).toBe('number');
+              needId1 = needId;
+            });
+        });
+
+        it('should create need2', () => {
+          return privateFreeTest(`
+          mutation {
+            createNeed {
+              ok
+              error
+              needId
+            }
+          }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    createNeed: { ok, error, needId },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(true);
+              expect(error).toBe(null);
+              expect(typeof needId).toBe('number');
+              needId2 = needId;
+            });
+        });
+
+        it('should create need3', () => {
+          return privateFreeTest(`
+          mutation {
+            createNeed {
+              ok
+              error
+              needId
+            }
+          }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    createNeed: { ok, error, needId },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(true);
+              expect(error).toBe(null);
+              expect(typeof needId).toBe('number');
+              needId3 = needId;
+            });
+        });
+
+        it('should fail if not logged in', () => {
+          return publicTest(`
+          mutation {
+            createNeed {
+              ok
+              error
+              needId
+            }
+          }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: { data, errors },
+              } = res;
+              expect(data).toBe(null);
+              expect(errors).not.toHaveLength(0);
+            });
+        });
       });
+
       describe('myNeed', () => {
-        it.todo('should find my need');
-        it.todo('should fail if not logged in');
+        let testNeeds: Need[];
+
+        beforeAll(async () => {
+          testNeeds = await needsRepository.find({ select: ['id'] });
+        });
+
+        it('should find my need', () => {
+          return privateFreeTest(`
+          query {
+            myNeed {
+              ok
+              error
+              needs {
+                id
+              }
+            }
+          }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    myNeed: { ok, error, needs },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(true);
+              expect(error).toBe(null);
+              expect(needs).toEqual(testNeeds);
+            });
+        });
+
+        it('should fail if not logged in', () => {
+          return publicTest(`
+          query {
+            myNeed {
+              ok
+              error
+              needs {
+                id
+              }
+            }
+          }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: { data, errors },
+              } = res;
+              expect(data).toBe(null);
+              expect(errors).not.toHaveLength(0);
+            });
+        });
       });
+
       describe('deleteNeed', () => {
-        it.todo('should delete need');
-        it.todo('should fail if not logged in');
-        it.todo('should fail if not my need');
-        it.todo('should fail if not exists');
+        it('should delete need', () => {
+          return privateFreeTest(`
+          mutation {
+            deleteNeed(input:{
+              needId:${needId3}
+            }) {
+              ok
+              error
+            }
+          }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    deleteNeed: { ok, error },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(true);
+              expect(error).toBe(null);
+            });
+        });
+
+        it('should fail if not my need', () => {
+          return privateAdminTest(`
+          mutation {
+            deleteNeed(input:{
+              needId:${needId2}
+            }) {
+              ok
+              error
+            }
+          }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    deleteNeed: { ok, error },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(false);
+              expect(error).toBe("You can't delete a need that you dont't own");
+            });
+        });
+
+        it('should fail if not exists', () => {
+          return privateFreeTest(`
+          mutation {
+            deleteNeed(input:{
+              needId:${needId3}
+            }) {
+              ok
+              error
+            }
+          }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    deleteNeed: { ok, error },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(false);
+              expect(error).toBe('Need not found');
+            });
+        });
+
+        it('should fail if not logged in', () => {
+          return publicTest(`
+          mutation {
+            deleteNeed(input:{
+              needId:${needId2}
+            }) {
+              ok
+              error
+            }
+          }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: { data, errors },
+              } = res;
+              expect(data).toBe(null);
+              expect(errors).not.toHaveLength(0);
+            });
+        });
       });
     });
+
     describe('NeedQuestion', () => {
+      const needQuestionArgs1 = {
+        stage: 1,
+        subStage: 1,
+        content: 'content number 1',
+      };
+      const needQuestionArgs2 = {
+        stage: 1,
+        subStage: 1,
+        content: 'content number 2',
+      };
+      const needQuestionArgs3 = {
+        stage: 2,
+        subStage: 1,
+        content: 'content number 3',
+      };
+
       describe('createNeedQuestion', () => {
-        it.todo('should create needQuestion');
-        it.todo('should fail if not logged in');
-        it.todo('should fail if not admin');
+        it('should create needQuestion 1', () => {
+          return privateAdminTest(`
+          mutation {
+            createNeedQuestion(input:{
+              stage: ${needQuestionArgs1.stage},
+              subStage: ${needQuestionArgs1.subStage},
+              content: "${needQuestionArgs1.content}"
+            }) {
+              ok
+              error
+            }
+          }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    createNeedQuestion: { ok, error },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(true);
+              expect(error).toBe(null);
+            });
+        });
+
+        it('should create needQuestion 2', () => {
+          return privateAdminTest(`
+          mutation {
+            createNeedQuestion(input:{
+              stage: ${needQuestionArgs2.stage},
+              subStage: ${needQuestionArgs2.subStage},
+              content: "${needQuestionArgs2.content}"
+            }) {
+              ok
+              error
+            }
+          }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    createNeedQuestion: { ok, error },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(true);
+              expect(error).toBe(null);
+            });
+        });
+
+        it('should create needQuestion 3', () => {
+          return privateAdminTest(`
+          mutation {
+            createNeedQuestion(input:{
+              stage: ${needQuestionArgs3.stage},
+              subStage: ${needQuestionArgs3.subStage},
+              content: "${needQuestionArgs3.content}"
+            }) {
+              ok
+              error
+            }
+          }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    createNeedQuestion: { ok, error },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(true);
+              expect(error).toBe(null);
+            });
+        });
+
+        it('should fail if not admin', () => {
+          return privateFreeTest(`
+          mutation {
+            createNeedQuestion(input:{
+              stage: ${needQuestionArgs3.stage},
+              subStage: ${needQuestionArgs3.subStage},
+              content: "${needQuestionArgs3.content}"
+            }) {
+              ok
+              error
+            }
+          }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: { data, errors },
+              } = res;
+              expect(data).toBe(null);
+              expect(errors).not.toHaveLength(0);
+            });
+        });
+
+        it('should fail if not logged in', () => {
+          return publicTest(`
+          mutation {
+            createNeedQuestion(input:{
+              stage: ${needQuestionArgs3.stage},
+              subStage: ${needQuestionArgs3.subStage},
+              content: "${needQuestionArgs3.content}"
+            }) {
+              ok
+              error
+            }
+          }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: { data, errors },
+              } = res;
+              expect(data).toBe(null);
+              expect(errors).not.toHaveLength(0);
+            });
+        });
       });
+
       describe('allNeedQuestions', () => {
-        it.todo('should find all needQuestions');
-        it.todo('should fail if not logged in');
+        let testNeedQuestions: NeedQuestion[];
+
+        beforeAll(async () => {
+          testNeedQuestions = await needQuestionsRepository.find({
+            select: ['id'],
+          });
+        });
+
+        it('should find all needQuestions', () => {
+          return privateFreeTest(`
+        query {
+          allNeedQuestions {
+            ok
+            error
+            needQuestions {
+              id
+            }
+          }
+        }
+        `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    allNeedQuestions: { ok, error, needQuestions },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(true);
+              expect(error).toBe(null);
+              expect(needQuestions).toEqual(testNeedQuestions);
+            });
+        });
+
+        it('should fail if not logged in', () => {
+          return publicTest(`
+          query {
+            allNeedQuestions {
+              ok
+              error
+              needQuestions {
+                id
+              }
+            }
+          }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: { data, errors },
+              } = res;
+              expect(data).toBe(null);
+              expect(errors).not.toHaveLength(0);
+            });
+        });
       });
       describe('findNeedQuestionsByStage', () => {
-        it.todo('should find all needQuestions by stage');
-        it.todo('should fail if not logged in');
-        it.todo('should find empty stage');
+        let testNeedQuestions: NeedQuestion[];
+
+        beforeAll(async () => {
+          testNeedQuestions = await needQuestionsRepository.find({
+            where: { stage: needQuestionArgs1.stage },
+            select: ['id'],
+          });
+        });
+
+        it('should find all needQuestions by stage', () => {
+          return privateFreeTest(`
+          query {
+            findNeedQuestionsByStage(input:{
+              stage: ${needQuestionArgs1.stage}
+            }) {
+              ok
+              error
+              needQuestions {
+                id
+              }
+            }
+          }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    findNeedQuestionsByStage: { ok, error, needQuestions },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(true);
+              expect(error).toBe(null);
+              expect(needQuestions).toEqual(testNeedQuestions);
+            });
+        });
+
+        it('should find empty stage', () => {
+          return privateFreeTest(`
+          query {
+            findNeedQuestionsByStage(input:{
+              stage: 666
+            }) {
+              ok
+              error
+              needQuestions {
+                id
+              }
+            }
+          }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    findNeedQuestionsByStage: { ok, error, needQuestions },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(true);
+              expect(error).toBe(null);
+              expect(needQuestions).toHaveLength(0);
+            });
+        });
+
+        it('should fail if not logged in', () => {
+          return publicTest(`
+          query {
+            findNeedQuestionsByStage(input:{
+              stage: ${needQuestionArgs1.stage}
+            }) {
+              ok
+              error
+              needQuestions {
+                id
+              }
+            }
+          }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: { data, errors },
+              } = res;
+              expect(data).toBe(null);
+              expect(errors).not.toHaveLength(0);
+            });
+        });
       });
+
       describe('editNeedQuestion', () => {
-        it.todo('should edit stage');
-        it.todo('should edit subStage');
-        it.todo('should edit content');
-        it.todo('should fail if not exists');
-        it.todo('should fail if not admin');
-        it.todo('should fail if not logged in');
+        let testNeedQuestion: NeedQuestion;
+
+        beforeAll(async () => {
+          testNeedQuestion = await needQuestionsRepository.findOne({
+            select: ['id'],
+          });
+        });
+
+        it('should edit stage', () => {
+          return privateAdminTest(`
+            mutation {
+              editNeedQuestion(input:{
+                needQuestionId:${testNeedQuestion.id},
+                stage: 2
+              }){
+                ok
+                error
+              }
+            }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    editNeedQuestion: { ok, error },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(true);
+              expect(error).toBe(null);
+            });
+        });
+
+        it('should edit subStage', () => {
+          return privateAdminTest(`
+            mutation {
+              editNeedQuestion(input:{
+                needQuestionId:${testNeedQuestion.id},
+                subStage: 2
+              }){
+                ok
+                error
+              }
+            }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    editNeedQuestion: { ok, error },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(true);
+              expect(error).toBe(null);
+            });
+        });
+
+        it('should edit content', () => {
+          return privateAdminTest(`
+            mutation {
+              editNeedQuestion(input:{
+                needQuestionId:${testNeedQuestion.id},
+                content: "edited content"
+              }){
+                ok
+                error
+              }
+            }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    editNeedQuestion: { ok, error },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(true);
+              expect(error).toBe(null);
+            });
+        });
+
+        it('should fail if not exists', () => {
+          return privateAdminTest(`
+            mutation {
+              editNeedQuestion(input:{
+                needQuestionId: 666,
+                content: "edited content"
+              }){
+                ok
+                error
+              }
+            }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    editNeedQuestion: { ok, error },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(false);
+              expect(error).toBe('Need question not found');
+            });
+        });
+
+        it('should fail if not admin', () => {
+          return privateFreeTest(`
+          mutation {
+            editNeedQuestion(input:{
+              needQuestionId:${testNeedQuestion.id},
+              stage: 2
+            }){
+              ok
+              error
+            }
+          }
+        `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: { data, errors },
+              } = res;
+              expect(data).toBe(null);
+              expect(errors).not.toHaveLength(0);
+            });
+        });
+
+        it('should fail if not logged in', () => {
+          return publicTest(`
+          mutation {
+            editNeedQuestion(input:{
+              needQuestionId:${testNeedQuestion.id},
+              stage: 2
+            }){
+              ok
+              error
+            }
+          }
+        `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: { data, errors },
+              } = res;
+              expect(data).toBe(null);
+              expect(errors).not.toHaveLength(0);
+            });
+        });
       });
+
       describe('deleteNeedQuestion', () => {
         it.todo('should edit stage');
         it.todo('should fail if not exists');

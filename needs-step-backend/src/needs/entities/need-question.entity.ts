@@ -21,7 +21,6 @@ export class NeedQuestion extends CoreEntity {
   @Field((type) => String)
   @Column()
   @IsString()
-  @Length(5, 140)
   content: string;
 
   @Field((type) => User)

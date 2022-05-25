@@ -4,6 +4,6 @@ import { Need } from '../entities/need.entity';
 
 @ObjectType()
 export class MyNeedsOutput extends CoreOutput {
-  @Field((type) => [Need])
+  @Field((type) => [Need], { nullable: true })
   needs?: Need[];
 }
