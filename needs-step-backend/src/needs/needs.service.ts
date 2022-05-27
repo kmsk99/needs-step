@@ -35,10 +35,10 @@ import { MeasureNeedsOutput } from './dtos/measure-needs.dto';
 import { NeedQuestionsOutput } from './dtos/need-questions.dto';
 import { MeasureNeed } from './entities/measure-need.entity';
 import { NeedQuestion } from './entities/need-question.entity';
-import { Need } from './entities/need.entity';
 import { FindNeedByDateInput } from './dtos/find-need-by-date.dto';
 import { NeedsOutput } from './dtos/needs.dto';
 import { NeedOutput } from './dtos/need.dto';
+import { Need } from './entities/need.entity';
 
 @Injectable()
 export class NeedService {
@@ -59,7 +59,7 @@ export class NeedService {
       const need = await this.needs.save(
         this.needs.create({
           user: authUser,
-          date,
+          date: date,
         }),
       );
 
@@ -96,7 +96,8 @@ export class NeedService {
   ): Promise<NeedOutput> {
     try {
       const need = await this.needs.findOne({
-        where: { date, user: authUser },
+        user: authUser,
+        date,
       });
 
       if (!need) {
@@ -121,7 +122,8 @@ export class NeedService {
   ): Promise<DeleteNeedOutput> {
     try {
       const need = await this.needs.findOne({
-        where: { date, user: authUser },
+        date,
+        user: authUser,
       });
 
       if (!need) {

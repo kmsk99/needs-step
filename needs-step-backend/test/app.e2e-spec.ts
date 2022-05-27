@@ -18,6 +18,8 @@ jest.mock('got', () => {
 
 const GRAPHQL_ENDPOINT = '/graphql';
 
+let freeUserArgs: User;
+
 const freeUser = {
   email: 'test@test.com',
   username: 'tester',
@@ -241,17 +243,16 @@ describe('e2e', () => {
     });
 
     describe('userProfile', () => {
-      let userId: number;
-
       beforeAll(async () => {
-        const user = await usersRepository.find();
-        userId = user[0].id;
+        freeUserArgs = await usersRepository.findOne({
+          where: { email: freeUser.email },
+        });
       });
 
       it("should see a user's profile", () => {
         return privateAdminTest(`
           {
-            userProfile(userId:${userId}){
+            userProfile(userId:${freeUserArgs.id}){
               ok
               error
               user {
@@ -275,7 +276,7 @@ describe('e2e', () => {
             } = res;
             expect(ok).toBe(true);
             expect(error).toBe(null);
-            expect(id).toBe(userId);
+            expect(id).toBe(freeUserArgs.id);
           });
       });
 
@@ -309,7 +310,7 @@ describe('e2e', () => {
       it('should not find a profile', () => {
         return privateFreeTest(`
           {
-            userProfile(userId:${userId}){
+            userProfile(userId:${freeUserArgs.id}){
               ok
               error
               user {
@@ -495,10 +496,15 @@ describe('e2e', () => {
         it('should create need1', () => {
           return privateFreeTest(`
           query {
-            createNeed {
+            findNeedByDate(input:{
+              date: "${date1}"
+            }) {
               ok
               error
-              needId
+              need {
+                id
+                date
+              }
             }
           }
           `)
@@ -507,24 +513,29 @@ describe('e2e', () => {
               const {
                 body: {
                   data: {
-                    createNeed: { ok, error, needId },
+                    findNeedByDate: { ok, error, need },
                   },
                 },
               } = res;
-              expect(ok).toBe(true);
               expect(error).toBe(null);
-              expect(typeof needId).toBe('number');
-              needId1 = needId;
+              expect(ok).toBe(true);
+              expect(need).toHaveProperty('id');
+              expect(need).toHaveProperty('date');
             });
         });
 
         it('should create need2', () => {
           return privateFreeTest(`
-          mutation {
-            createNeed {
+          query {
+            findNeedByDate(input:{
+              date: "${date2}"
+            }) {
               ok
               error
-              needId
+              need {
+                id
+                date
+              }
             }
           }
           `)
@@ -533,24 +544,29 @@ describe('e2e', () => {
               const {
                 body: {
                   data: {
-                    createNeed: { ok, error, needId },
+                    findNeedByDate: { ok, error, need },
                   },
                 },
               } = res;
               expect(ok).toBe(true);
               expect(error).toBe(null);
-              expect(typeof needId).toBe('number');
-              needId2 = needId;
+              expect(need).toHaveProperty('id');
+              expect(need).toHaveProperty('date');
             });
         });
 
         it('should create need3', () => {
           return privateFreeTest(`
-          mutation {
-            createNeed {
+          query {
+            findNeedByDate(input:{
+              date: "${date3}"
+            }) {
               ok
               error
-              needId
+              need {
+                id
+                date
+              }
             }
           }
           `)
@@ -559,24 +575,25 @@ describe('e2e', () => {
               const {
                 body: {
                   data: {
-                    createNeed: { ok, error, needId },
+                    findNeedByDate: { ok, error, need },
                   },
                 },
               } = res;
               expect(ok).toBe(true);
               expect(error).toBe(null);
-              expect(typeof needId).toBe('number');
-              needId3 = needId;
+              expect(need).toHaveProperty('id');
+              expect(need).toHaveProperty('date');
             });
         });
 
         it('should fail if not logged in', () => {
           return publicTest(`
-          mutation {
-            createNeed {
+          query {
+            findNeedByDate(input:{
+              date: "${date1}"
+            }) {
               ok
               error
-              needId
             }
           }
           `)
@@ -649,11 +666,11 @@ describe('e2e', () => {
       });
 
       describe('deleteNeed', () => {
-        it('should delete need', () => {
+        it('should delete need3', () => {
           return privateFreeTest(`
           mutation {
             deleteNeed(input:{
-              needId:${needId3}
+              date: "${date3}"
             }) {
               ok
               error
@@ -674,36 +691,11 @@ describe('e2e', () => {
             });
         });
 
-        it('should fail if not my need', () => {
-          return privateAdminTest(`
-          mutation {
-            deleteNeed(input:{
-              needId:${needId2}
-            }) {
-              ok
-              error
-            }
-          }
-          `)
-            .expect(200)
-            .expect((res) => {
-              const {
-                body: {
-                  data: {
-                    deleteNeed: { ok, error },
-                  },
-                },
-              } = res;
-              expect(ok).toBe(false);
-              expect(error).toBe("You can't delete a need that you dont't own");
-            });
-        });
-
         it('should fail if not exists', () => {
           return privateFreeTest(`
           mutation {
             deleteNeed(input:{
-              needId:${needId3}
+              date: "${date3}"
             }) {
               ok
               error
@@ -728,7 +720,7 @@ describe('e2e', () => {
           return publicTest(`
           mutation {
             deleteNeed(input:{
-              needId:${needId2}
+              date: "${date2}"
             }) {
               ok
               error
@@ -1325,7 +1317,7 @@ describe('e2e', () => {
           return privateFreeTest(`
             mutation {
               createMeasureNeed(input:{
-                needId:${needId1},
+                date:"${date1}",
                 needQuestionId:${needQuestionId1},
                 score: 1
               }){
@@ -1355,7 +1347,7 @@ describe('e2e', () => {
           return privateFreeTest(`
             mutation {
               createMeasureNeed(input:{
-                needId:${needId1},
+                date:"${date1}",
                 needQuestionId:${needQuestionId2},
                 score: 2
               }){
@@ -1385,7 +1377,7 @@ describe('e2e', () => {
           return privateFreeTest(`
             mutation {
               createMeasureNeed(input:{
-                needId:${needId2},
+                date:"${date2}",
                 needQuestionId:${needQuestionId1},
                 score: 3
               }){
@@ -1411,38 +1403,11 @@ describe('e2e', () => {
             });
         });
 
-        it('should fail if need not exists', () => {
-          return privateFreeTest(`
-            mutation {
-              createMeasureNeed(input:{
-                needId:${needId3},
-                needQuestionId:${needQuestionId1},
-                score: 1
-              }){
-                ok
-                error
-              }
-            }
-          `)
-            .expect(200)
-            .expect((res) => {
-              const {
-                body: {
-                  data: {
-                    createMeasureNeed: { ok, error },
-                  },
-                },
-              } = res;
-              expect(ok).toBe(false);
-              expect(error).toBe('Need not found');
-            });
-        });
-
         it('should fail if need question not exists', () => {
           return privateFreeTest(`
             mutation {
               createMeasureNeed(input:{
-                needId:${needId1},
+                date:"${date1}",
                 needQuestionId:${needQuestionId3},
                 score: 1
               }){
@@ -1465,38 +1430,11 @@ describe('e2e', () => {
             });
         });
 
-        it('should fail if not mine', () => {
-          return privateAdminTest(`
-            mutation {
-              createMeasureNeed(input:{
-                needId:${needId1},
-                needQuestionId:${needQuestionId1},
-                score: 1
-              }){
-                ok
-                error
-              }
-            }
-          `)
-            .expect(200)
-            .expect((res) => {
-              const {
-                body: {
-                  data: {
-                    createMeasureNeed: { ok, error },
-                  },
-                },
-              } = res;
-              expect(ok).toBe(false);
-              expect(error).toBe("You can't edit a need that you dont't own");
-            });
-        });
-
         it('should fail if not logged in', () => {
           return publicTest(`
           mutation {
             createMeasureNeed(input:{
-              needId:${needId1},
+              date:"${date1}",
               needQuestionId:${needQuestionId1},
               score: 1
             }){
@@ -1631,20 +1569,11 @@ describe('e2e', () => {
       });
 
       describe('findMeasureNeedsByNeed', () => {
-        let testNeed;
-
-        beforeAll(async () => {
-          testNeed = await needsRepository.findOne({
-            where: { id: needId1 },
-            relations: ['measureNeeds'],
-          });
-        });
-
         it('should find measureNeeds', () => {
           return privateFreeTest(`
             query {
               findMeasureNeedsByNeed(input:{
-                needId: ${needId1}
+                date: "${date1}"
               }) {
                 ok
                 error
@@ -1666,7 +1595,10 @@ describe('e2e', () => {
               } = res;
               expect(ok).toBe(true);
               expect(error).toBe(null);
-              expect(testNeed.measureNeeds).toMatchObject(measureNeeds);
+              measureNeeds.forEach((measureNeed) => {
+                expect(measureNeed).toHaveProperty('id');
+                expect(measureNeed).toHaveProperty('score');
+              });
             });
         });
 
@@ -1674,7 +1606,7 @@ describe('e2e', () => {
           return privateFreeTest(`
             query {
               findMeasureNeedsByNeed(input:{
-                needId: 666
+                date: "2000-01-01"
               }) {
                 ok
                 error
@@ -1695,36 +1627,11 @@ describe('e2e', () => {
             });
         });
 
-        it('should fail if not mine', () => {
-          return privateAdminTest(`
-            query {
-              findMeasureNeedsByNeed(input:{
-                needId: ${needId1}
-              }) {
-                ok
-                error
-              }
-            }
-          `)
-            .expect(200)
-            .expect((res) => {
-              const {
-                body: {
-                  data: {
-                    findMeasureNeedsByNeed: { ok, error },
-                  },
-                },
-              } = res;
-              expect(ok).toBe(false);
-              expect(error).toBe("You can't find need that you dont't own");
-            });
-        });
-
         it('should fail if not logged in', () => {
           return publicTest(`
               query {
                 findMeasureNeedsByNeed(input:{
-                  needId: ${needId1}
+                  date: "${date1}"
                 }) {
                   ok
                   error

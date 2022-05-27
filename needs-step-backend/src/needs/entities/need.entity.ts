@@ -1,7 +1,8 @@
 import { Field, InputType, ObjectType } from '@nestjs/graphql';
+import { IsString } from 'class-validator';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { User } from 'src/users/entities/user.entity';
-import { Entity, ManyToOne, OneToMany, RelationId } from 'typeorm';
+import { Column, Entity, ManyToOne, OneToMany, RelationId } from 'typeorm';
 import { MeasureNeed } from './measure-need.entity';
 
 @InputType('NeedInputType', { isAbstract: true })
@@ -22,5 +23,7 @@ export class Need extends CoreEntity {
   measureNeeds: MeasureNeed[];
 
   @Field((type) => String)
+  @Column()
+  @IsString()
   date: string;
 }

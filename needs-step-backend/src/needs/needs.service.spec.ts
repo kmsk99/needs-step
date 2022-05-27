@@ -121,7 +121,8 @@ describe('NeedService', () => {
 
         expect(needsRepository.findOne).toHaveBeenCalledTimes(1);
         expect(needsRepository.findOne).toHaveBeenCalledWith({
-          where: { date: dateArgs.date, user: userArgs },
+          date: dateArgs.date,
+          user: userArgs,
         });
 
         expect(result).toEqual({
@@ -140,7 +141,8 @@ describe('NeedService', () => {
 
         expect(needsRepository.findOne).toHaveBeenCalledTimes(1);
         expect(needsRepository.findOne).toHaveBeenCalledWith({
-          where: { date: dateArgs.date, user: userArgs },
+          date: dateArgs.date,
+          user: userArgs,
         });
 
         expect(service.createNeed).toHaveBeenCalledTimes(1);
@@ -231,7 +233,8 @@ describe('NeedService', () => {
         const result = await service.deleteNeed(userArgs, dateArgs);
 
         expect(needsRepository.findOne).toBeCalledWith({
-          where: { date: dateArgs.date, user: userArgs },
+          date: dateArgs.date,
+          user: userArgs,
         });
         expect(needsRepository.findOne).toBeCalledTimes(1);
 
@@ -249,7 +252,8 @@ describe('NeedService', () => {
         const result = await service.deleteNeed(userArgs, dateArgs);
 
         expect(needsRepository.findOne).toBeCalledWith({
-          where: { date: dateArgs.date, user: userArgs },
+          date: dateArgs.date,
+          user: userArgs,
         });
         expect(needsRepository.findOne).toBeCalledTimes(1);
 
@@ -265,7 +269,8 @@ describe('NeedService', () => {
         const result = await service.deleteNeed(userArgs, dateArgs);
 
         expect(needsRepository.findOne).toBeCalledWith({
-          where: { date: dateArgs.date, user: userArgs },
+          date: dateArgs.date,
+          user: userArgs,
         });
         expect(needsRepository.findOne).toBeCalledTimes(1);
 
