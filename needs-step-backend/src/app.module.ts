@@ -15,6 +15,7 @@ import { NeedsModule } from './needs/needs.module';
 import { Need } from './needs/entities/need.entity';
 import { NeedQuestion } from './needs/entities/need-question.entity';
 import { MeasureNeed } from './needs/entities/measure-need.entity';
+import { TargetModule } from './target/target.module';
 
 @Module({
   imports: [
@@ -78,6 +79,7 @@ import { MeasureNeed } from './needs/entities/measure-need.entity';
     UsersModule,
     CommonModule,
     NeedsModule,
+    TargetModule,
   ],
   controllers: [],
   providers: [],

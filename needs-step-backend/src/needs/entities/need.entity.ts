@@ -20,4 +20,7 @@ export class Need extends CoreEntity {
   @Field((type) => [MeasureNeed])
   @OneToMany((type) => MeasureNeed, (measureNeed) => measureNeed.need)
   measureNeeds: MeasureNeed[];
+
+  @Field((type) => String)
+  date: string;
 }

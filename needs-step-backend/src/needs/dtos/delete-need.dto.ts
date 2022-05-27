@@ -3,8 +3,8 @@ import { CoreOutput } from 'src/common/dtos/output.dto';
 
 @InputType()
 export class DeleteNeedInput {
-  @Field((type) => Number)
-  needId: number;
+  @Field((type) => String)
+  date: string;
 }
 
 @ObjectType()

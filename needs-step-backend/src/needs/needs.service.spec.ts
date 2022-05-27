@@ -61,39 +61,104 @@ describe('NeedService', () => {
         id: 1,
       } as User;
 
-      it('success', async () => {
-        needsRepository.create.mockReturnValue({
-          user: userArgs,
-          id: 1,
-        });
-        needsRepository.save.mockResolvedValue({
-          user: userArgs,
-          id: 1,
-        });
+      const dateArgs = { date: '2020-01-01' };
 
-        const result = await service.createNeed(userArgs);
+      const needArgs = {
+        user: userArgs,
+        date: dateArgs.date,
+        id: 1,
+      } as Need;
+
+      it('success', async () => {
+        needsRepository.create.mockReturnValue(needArgs);
+        needsRepository.save.mockResolvedValue(needArgs);
+
+        const result = await service.createNeed(userArgs, dateArgs);
 
         expect(needsRepository.create).toHaveBeenCalledTimes(1);
-        expect(needsRepository.create).toHaveBeenCalledWith({ user: userArgs });
+        expect(needsRepository.create).toHaveBeenCalledWith({
+          user: userArgs,
+          date: dateArgs.date,
+        });
 
         expect(needsRepository.save).toHaveBeenCalledTimes(1);
-        expect(needsRepository.save).toHaveBeenCalledWith({
-          user: userArgs,
-          id: 1,
-        });
+        expect(needsRepository.save).toHaveBeenCalledWith(needArgs);
 
         expect(result).toEqual({
           ok: true,
-          needId: 1,
+          need: needArgs,
         });
       });
 
       it('fail on exception', async () => {
         needsRepository.save.mockRejectedValue(new Error());
-        const result = await service.createNeed(userArgs);
+        const result = await service.createNeed(userArgs, dateArgs);
+
         expect(result).toEqual({
           ok: false,
           error: 'Could not create need',
+        });
+      });
+    });
+
+    describe('findNeedByDate', () => {
+      const userArgs = {
+        id: 1,
+      } as User;
+
+      const dateArgs = { date: '2020-01-01' };
+
+      const needArgs = {
+        user: userArgs,
+        date: dateArgs.date,
+        id: 1,
+      } as Need;
+
+      it('success', async () => {
+        needsRepository.findOne.mockResolvedValue(needArgs);
+
+        const result = await service.findNeedByDate(userArgs, dateArgs);
+
+        expect(needsRepository.findOne).toHaveBeenCalledTimes(1);
+        expect(needsRepository.findOne).toHaveBeenCalledWith({
+          where: { date: dateArgs.date, user: userArgs },
+        });
+
+        expect(result).toEqual({
+          ok: true,
+          need: needArgs,
+        });
+      });
+
+      it('call createNeed', async () => {
+        needsRepository.findOne.mockResolvedValue(undefined);
+        jest
+          .spyOn(service, 'createNeed')
+          .mockResolvedValue({ ok: true, need: needArgs });
+
+        const result = await service.findNeedByDate(userArgs, dateArgs);
+
+        expect(needsRepository.findOne).toHaveBeenCalledTimes(1);
+        expect(needsRepository.findOne).toHaveBeenCalledWith({
+          where: { date: dateArgs.date, user: userArgs },
+        });
+
+        expect(service.createNeed).toHaveBeenCalledTimes(1);
+        expect(service.createNeed).toHaveBeenCalledWith(userArgs, dateArgs);
+
+        expect(result).toEqual({
+          ok: true,
+          need: needArgs,
+        });
+      });
+
+      it('fail on exception', async () => {
+        needsRepository.findOne.mockRejectedValue(new Error());
+        const result = await service.findNeedByDate(userArgs, dateArgs);
+
+        expect(result).toEqual({
+          ok: false,
+          error: 'Could not find need',
         });
       });
     });
@@ -150,25 +215,28 @@ describe('NeedService', () => {
       const userArgs = {
         id: 1,
       } as User;
-      const deleteNeedInput = {
-        needId: 1,
-      };
+
+      const dateArgs = { date: '2020-01-01' };
+
+      const needArgs = {
+        user: userArgs,
+        date: dateArgs.date,
+        id: 1,
+      } as Need;
 
       it('success', async () => {
-        const needArgs = {
-          id: 1,
-          userId: 1,
-        } as Need;
         needsRepository.findOne.mockResolvedValue(needArgs);
         needsRepository.delete.mockResolvedValue(undefined);
 
-        const result = await service.deleteNeed(userArgs, deleteNeedInput);
+        const result = await service.deleteNeed(userArgs, dateArgs);
 
-        expect(needsRepository.findOne).toBeCalledWith(deleteNeedInput.needId);
+        expect(needsRepository.findOne).toBeCalledWith({
+          where: { date: dateArgs.date, user: userArgs },
+        });
         expect(needsRepository.findOne).toBeCalledTimes(1);
 
+        expect(needsRepository.delete).toBeCalledWith(needArgs.id);
         expect(needsRepository.delete).toBeCalledTimes(1);
-        expect(needsRepository.delete).toBeCalledWith(deleteNeedInput.needId);
 
         expect(result).toEqual({
           ok: true,
@@ -178,9 +246,11 @@ describe('NeedService', () => {
       it('need not found', async () => {
         needsRepository.findOne.mockResolvedValue(undefined);
 
-        const result = await service.deleteNeed(userArgs, deleteNeedInput);
+        const result = await service.deleteNeed(userArgs, dateArgs);
 
-        expect(needsRepository.findOne).toBeCalledWith(deleteNeedInput.needId);
+        expect(needsRepository.findOne).toBeCalledWith({
+          where: { date: dateArgs.date, user: userArgs },
+        });
         expect(needsRepository.findOne).toBeCalledTimes(1);
 
         expect(result).toEqual({
@@ -189,31 +259,14 @@ describe('NeedService', () => {
         });
       });
 
-      it('dont own need', async () => {
-        const needArgs = {
-          id: 1,
-          userId: 2,
-        } as Need;
-
-        needsRepository.findOne.mockResolvedValue(needArgs);
-
-        const result = await service.deleteNeed(userArgs, deleteNeedInput);
-
-        expect(needsRepository.findOne).toBeCalledWith(deleteNeedInput.needId);
-        expect(needsRepository.findOne).toBeCalledTimes(1);
-
-        expect(result).toEqual({
-          ok: false,
-          error: "You can't delete a need that you dont't own",
-        });
-      });
-
       it('fail on exception', async () => {
         needsRepository.findOne.mockRejectedValue(new Error());
 
-        const result = await service.deleteNeed(userArgs, deleteNeedInput);
+        const result = await service.deleteNeed(userArgs, dateArgs);
 
-        expect(needsRepository.findOne).toBeCalledWith(deleteNeedInput.needId);
+        expect(needsRepository.findOne).toBeCalledWith({
+          where: { date: dateArgs.date, user: userArgs },
+        });
         expect(needsRepository.findOne).toBeCalledTimes(1);
 
         expect(result).toEqual({
@@ -490,6 +543,7 @@ describe('NeedService', () => {
       const needArgs = {
         id: 1,
         userId: 1,
+        date: '2020-01-01',
       } as Need;
       const needQustionArgs = {
         id: 1,
@@ -498,7 +552,7 @@ describe('NeedService', () => {
         id: 1,
       } as MeasureNeed;
       const createMeasureNeedInput = {
-        needId: 1,
+        date: '2020-01-01',
         needQuestionId: 1,
         score: 1,
       };
@@ -507,7 +561,9 @@ describe('NeedService', () => {
       } as User;
 
       it('success', async () => {
-        needsRepository.findOne.mockResolvedValue(needArgs);
+        jest
+          .spyOn(service, 'findNeedByDate')
+          .mockResolvedValue({ ok: true, need: needArgs });
         needQuestionsRepository.findOne.mockResolvedValue(needQustionArgs);
         measureNeedsRepository.create.mockReturnValue(measureNeedArgs);
         measureNeedsRepository.save.mockResolvedValue(undefined);
@@ -517,10 +573,10 @@ describe('NeedService', () => {
           createMeasureNeedInput,
         );
 
-        expect(needsRepository.findOne).toBeCalledWith(
-          createMeasureNeedInput.needId,
-        );
-        expect(needsRepository.findOne).toBeCalledTimes(1);
+        expect(service.findNeedByDate).toBeCalledWith(userArgs, {
+          date: createMeasureNeedInput.date,
+        });
+        expect(service.findNeedByDate).toBeCalledTimes(1);
 
         expect(needQuestionsRepository.findOne).toBeCalledWith(
           createMeasureNeedInput.needQuestionId,
@@ -538,21 +594,21 @@ describe('NeedService', () => {
         expect(measureNeedsRepository.save).toBeCalledWith(measureNeedArgs);
         expect(measureNeedsRepository.save).toBeCalledTimes(1);
 
-        expect(result).toEqual({ ok: true });
+        expect(result).toEqual({ ok: true, measureNeedId: 1 });
       });
 
       it('need not found', async () => {
-        needsRepository.findOne.mockResolvedValue(undefined);
+        jest.spyOn(service, 'findNeedByDate').mockResolvedValue({ ok: false });
 
         const result = await service.createMeasureNeed(
           userArgs,
           createMeasureNeedInput,
         );
 
-        expect(needsRepository.findOne).toBeCalledWith(
-          createMeasureNeedInput.needId,
-        );
-        expect(needsRepository.findOne).toBeCalledTimes(1);
+        expect(service.findNeedByDate).toBeCalledWith(userArgs, {
+          date: createMeasureNeedInput.date,
+        });
+        expect(service.findNeedByDate).toBeCalledTimes(1);
 
         expect(result).toEqual({
           ok: false,
@@ -560,27 +616,10 @@ describe('NeedService', () => {
         });
       });
 
-      it('cant edit dont own', async () => {
-        needsRepository.findOne.mockResolvedValue(needArgs);
-
-        const result = await service.createMeasureNeed(
-          otherUserArgs,
-          createMeasureNeedInput,
-        );
-
-        expect(needsRepository.findOne).toBeCalledWith(
-          createMeasureNeedInput.needId,
-        );
-        expect(needsRepository.findOne).toBeCalledTimes(1);
-
-        expect(result).toEqual({
-          ok: false,
-          error: "You can't edit a need that you dont't own",
-        });
-      });
-
       it('Need question not found', async () => {
-        needsRepository.findOne.mockResolvedValue(needArgs);
+        jest
+          .spyOn(service, 'findNeedByDate')
+          .mockResolvedValue({ ok: true, need: needArgs });
         needQuestionsRepository.findOne.mockResolvedValue(undefined);
 
         const result = await service.createMeasureNeed(
@@ -588,10 +627,10 @@ describe('NeedService', () => {
           createMeasureNeedInput,
         );
 
-        expect(needsRepository.findOne).toBeCalledWith(
-          createMeasureNeedInput.needId,
-        );
-        expect(needsRepository.findOne).toBeCalledTimes(1);
+        expect(service.findNeedByDate).toBeCalledWith(userArgs, {
+          date: createMeasureNeedInput.date,
+        });
+        expect(service.findNeedByDate).toBeCalledTimes(1);
 
         expect(needQuestionsRepository.findOne).toBeCalledWith(
           createMeasureNeedInput.needQuestionId,
@@ -605,17 +644,17 @@ describe('NeedService', () => {
       });
 
       it('fail on exception', async () => {
-        needsRepository.findOne.mockRejectedValue(new Error());
+        jest.spyOn(service, 'findNeedByDate').mockRejectedValue(new Error());
 
         const result = await service.createMeasureNeed(
           userArgs,
           createMeasureNeedInput,
         );
 
-        expect(needsRepository.findOne).toBeCalledWith(
-          createMeasureNeedInput.needId,
-        );
-        expect(needsRepository.findOne).toBeCalledTimes(1);
+        expect(service.findNeedByDate).toBeCalledWith(userArgs, {
+          date: createMeasureNeedInput.date,
+        });
+        expect(service.findNeedByDate).toBeCalledTimes(1);
 
         expect(result).toEqual({
           ok: false,
@@ -720,63 +759,57 @@ describe('NeedService', () => {
       const measureNeedArgs = {
         id: 1,
       } as MeasureNeed;
+      const dateArgs = { date: '2020-01-01' };
       const needArgs = {
         id: 1,
         userId: 1,
+        date: dateArgs.date,
         measureNeeds: [measureNeedArgs],
       } as Need;
-      const findMeasureNeedsByNeedInput = {
-        needId: 1,
-      };
       const otherUserArgs = {
         id: 2,
       } as User;
 
+      const queryArgs = (authUser: User, date: string) => {
+        return { where: { date, user: authUser }, relations: ['measureNeeds'] };
+      };
+
       it('success', async () => {
         needsRepository.findOne.mockResolvedValue(needArgs);
 
-        const result = await service.findMeasureNeedsByNeed(
-          userArgs,
-          findMeasureNeedsByNeedInput,
-        );
+        const result = await service.findMeasureNeedsByNeed(userArgs, dateArgs);
 
         expect(needsRepository.findOne).toBeCalledWith(
-          findMeasureNeedsByNeedInput.needId,
+          queryArgs(userArgs, dateArgs.date),
         );
         expect(needsRepository.findOne).toBeCalledTimes(1);
 
         expect(result).toEqual({ ok: true, measureNeeds: [measureNeedArgs] });
       });
 
-      it('cant find dont own', async () => {
-        needsRepository.findOne.mockResolvedValue(needArgs);
+      it('cant find need', async () => {
+        needsRepository.findOne.mockResolvedValue(undefined);
 
-        const result = await service.findMeasureNeedsByNeed(
-          otherUserArgs,
-          findMeasureNeedsByNeedInput,
-        );
+        const result = await service.findMeasureNeedsByNeed(userArgs, dateArgs);
 
         expect(needsRepository.findOne).toBeCalledWith(
-          findMeasureNeedsByNeedInput.needId,
+          queryArgs(userArgs, dateArgs.date),
         );
         expect(needsRepository.findOne).toBeCalledTimes(1);
 
         expect(result).toEqual({
           ok: false,
-          error: "You can't find need that you dont't own",
+          error: 'Need not found',
         });
       });
 
       it('fail on exception', async () => {
         needsRepository.findOne.mockRejectedValue(new Error());
 
-        const result = await service.findMeasureNeedsByNeed(
-          userArgs,
-          findMeasureNeedsByNeedInput,
-        );
+        const result = await service.findMeasureNeedsByNeed(userArgs, dateArgs);
 
         expect(needsRepository.findOne).toBeCalledWith(
-          findMeasureNeedsByNeedInput.needId,
+          queryArgs(userArgs, dateArgs.date),
         );
         expect(needsRepository.findOne).toBeCalledTimes(1);
 

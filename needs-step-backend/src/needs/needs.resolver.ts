@@ -10,7 +10,6 @@ import {
   CreateNeedQuestionInput,
   CreateNeedQuestionOutput,
 } from './dtos/create-need-question.dto';
-import { CreateNeedOutput } from './dtos/create-need.dto';
 import {
   DeleteMeasureNeedInput,
   DeleteMeasureNeedOutput,
@@ -30,11 +29,13 @@ import {
 } from './dtos/edit-need-question.dto';
 import { FindMeasureNeedInput } from './dtos/find-measure-need.dto';
 import { findMeasureNeedsByNeedInput } from './dtos/find-measure-needs-by-need.dto';
+import { FindNeedByDateInput } from './dtos/find-need-by-date.dto';
 import { FindNeedQuestionsInput } from './dtos/find-need-questions.dto';
 import { MeasureNeedOutput } from './dtos/measure-need.dto';
 import { MeasureNeedsOutput } from './dtos/measure-needs.dto';
-import { MyNeedsOutput } from './dtos/my-needs.dto';
 import { NeedQuestionsOutput } from './dtos/need-questions.dto';
+import { NeedOutput } from './dtos/need.dto';
+import { NeedsOutput } from './dtos/needs.dto';
 import { MeasureNeed } from './entities/measure-need.entity';
 import { NeedQuestion } from './entities/need-question.entity';
 import { Need } from './entities/need.entity';
@@ -44,15 +45,18 @@ import { NeedService } from './needs.service';
 export class NeedResolver {
   constructor(private readonly needService: NeedService) {}
 
-  @Mutation((returns) => CreateNeedOutput)
+  @Query((returns) => NeedOutput)
   @Role(['Any'])
-  async createNeed(@AuthUser() authUser: User): Promise<CreateNeedOutput> {
-    return this.needService.createNeed(authUser);
+  async findNeedByDate(
+    @AuthUser() authUser: User,
+    @Args('input') findNeedByDateInput: FindNeedByDateInput,
+  ): Promise<NeedOutput> {
+    return this.needService.findNeedByDate(authUser, findNeedByDateInput);
   }
 
-  @Query((returns) => MyNeedsOutput)
+  @Query((returns) => NeedsOutput)
   @Role(['Any'])
-  async myNeed(@AuthUser() authUser: User): Promise<MyNeedsOutput> {
+  async myNeed(@AuthUser() authUser: User): Promise<NeedsOutput> {
     return this.needService.myNeed(authUser);
   }
 

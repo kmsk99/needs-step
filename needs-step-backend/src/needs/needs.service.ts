@@ -10,7 +10,6 @@ import {
   CreateNeedQuestionInput,
   CreateNeedQuestionOutput,
 } from './dtos/create-need-question.dto';
-import { CreateNeedOutput } from './dtos/create-need.dto';
 import {
   DeleteMeasureNeedInput,
   DeleteMeasureNeedOutput,
@@ -33,11 +32,13 @@ import { FindMeasureNeedInput } from './dtos/find-measure-need.dto';
 import { FindNeedQuestionsInput } from './dtos/find-need-questions.dto';
 import { MeasureNeedOutput } from './dtos/measure-need.dto';
 import { MeasureNeedsOutput } from './dtos/measure-needs.dto';
-import { MyNeedsOutput } from './dtos/my-needs.dto';
 import { NeedQuestionsOutput } from './dtos/need-questions.dto';
 import { MeasureNeed } from './entities/measure-need.entity';
 import { NeedQuestion } from './entities/need-question.entity';
 import { Need } from './entities/need.entity';
+import { FindNeedByDateInput } from './dtos/find-need-by-date.dto';
+import { NeedsOutput } from './dtos/needs.dto';
+import { NeedOutput } from './dtos/need.dto';
 
 @Injectable()
 export class NeedService {
@@ -50,16 +51,21 @@ export class NeedService {
     private readonly measureNeeds: Repository<MeasureNeed>,
   ) {}
 
-  async createNeed(authUser: User): Promise<CreateNeedOutput> {
+  async createNeed(
+    authUser: User,
+    { date }: FindNeedByDateInput,
+  ): Promise<NeedOutput> {
     try {
-      const newNeed = this.needs.create({
-        user: authUser,
-      });
-      await this.needs.save(newNeed);
+      const need = await this.needs.save(
+        this.needs.create({
+          user: authUser,
+          date,
+        }),
+      );
 
       return {
         ok: true,
-        needId: newNeed.id,
+        need,
       };
     } catch {
       return {
@@ -69,7 +75,7 @@ export class NeedService {
     }
   }
 
-  async myNeed(authUser: User): Promise<MyNeedsOutput> {
+  async myNeed(authUser: User): Promise<NeedsOutput> {
     try {
       const needs = await this.needs.find({ user: authUser });
       return {
@@ -84,25 +90,49 @@ export class NeedService {
     }
   }
 
+  async findNeedByDate(
+    authUser: User,
+    { date }: FindNeedByDateInput,
+  ): Promise<NeedOutput> {
+    try {
+      const need = await this.needs.findOne({
+        where: { date, user: authUser },
+      });
+
+      if (!need) {
+        return await this.createNeed(authUser, { date });
+      }
+
+      return {
+        ok: true,
+        need,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not find need',
+      };
+    }
+  }
+
   async deleteNeed(
     authUser: User,
-    { needId }: DeleteNeedInput,
+    { date }: DeleteNeedInput,
   ): Promise<DeleteNeedOutput> {
     try {
-      const need = await this.needs.findOne(needId);
+      const need = await this.needs.findOne({
+        where: { date, user: authUser },
+      });
+
       if (!need) {
         return {
           ok: false,
           error: 'Need not found',
         };
       }
-      if (need.userId !== authUser.id) {
-        return {
-          ok: false,
-          error: "You can't delete a need that you dont't own",
-        };
-      }
-      await this.needs.delete(needId);
+
+      await this.needs.delete(need.id);
+
       return {
         ok: true,
       };
@@ -118,13 +148,13 @@ export class NeedService {
     createNeedQuestionInput: CreateNeedQuestionInput,
   ): Promise<CreateNeedQuestionOutput> {
     try {
-      await this.needQuestions.save(
-        this.needQuestions.create({
-          ...createNeedQuestionInput,
-        }),
-      );
+      const newNeedQuestion = this.needQuestions.create({
+        ...createNeedQuestionInput,
+      });
+      await this.needQuestions.save(newNeedQuestion);
       return {
         ok: true,
+        needQuestionId: newNeedQuestion.id,
       };
     } catch {
       return {
@@ -222,27 +252,22 @@ export class NeedService {
 
   async createMeasureNeed(
     authUser: User,
-    { needId, needQuestionId, score }: CreateMeasureNeedInput,
+    { date, needQuestionId, score }: CreateMeasureNeedInput,
   ): Promise<CreateMeasureNeedOutput> {
     try {
-      const currentNeed = await this.needs.findOne(needId);
-      if (!currentNeed) {
+      const { need } = await this.findNeedByDate(authUser, { date });
+
+      if (!need) {
         return {
           ok: false,
           error: 'Need not found',
         };
       }
 
-      if (currentNeed.userId !== authUser.id) {
-        return {
-          ok: false,
-          error: "You can't edit a need that you dont't own",
-        };
-      }
-
       const currentNeedQuestion = await this.needQuestions.findOne(
         needQuestionId,
       );
+
       if (!currentNeedQuestion) {
         return {
           ok: false,
@@ -254,12 +279,14 @@ export class NeedService {
         score,
         user: authUser,
         needQuestion: currentNeedQuestion,
-        need: currentNeed,
+        need: need,
       });
+
       await this.measureNeeds.save(measureNeed);
 
       return {
         ok: true,
+        measureNeedId: measureNeed.id,
       };
     } catch {
       return {
@@ -304,15 +331,18 @@ export class NeedService {
 
   async findMeasureNeedsByNeed(
     authUser: User,
-    { needId }: findMeasureNeedsByNeedInput,
+    { date }: findMeasureNeedsByNeedInput,
   ): Promise<MeasureNeedsOutput> {
     try {
-      const currentNeed = await this.needs.findOne(needId);
+      const currentNeed = await this.needs.findOne({
+        where: { date, user: authUser },
+        relations: ['measureNeeds'],
+      });
 
-      if (currentNeed.userId !== authUser.id) {
+      if (!currentNeed) {
         return {
           ok: false,
-          error: "You can't find need that you dont't own",
+          error: 'Need not found',
         };
       }
 
@@ -375,13 +405,16 @@ export class NeedService {
           error: 'Measure need not found',
         };
       }
+
       if (measureNeed.userId !== authUser.id) {
         return {
           ok: false,
           error: "You can't delete a measure need that you dont't own",
         };
       }
+
       await this.measureNeeds.delete(measureNeedId);
+
       return {
         ok: true,
       };

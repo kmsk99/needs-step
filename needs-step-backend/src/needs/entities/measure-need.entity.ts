@@ -14,7 +14,6 @@ export class MeasureNeed extends CoreEntity {
   @ManyToOne((type) => NeedQuestion, {
     nullable: true,
     onDelete: 'SET NULL',
-    eager: true,
   })
   needQuestion: NeedQuestion;
 

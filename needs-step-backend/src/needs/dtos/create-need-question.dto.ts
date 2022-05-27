@@ -1,4 +1,4 @@
-import { InputType, ObjectType, PickType } from '@nestjs/graphql';
+import { Field, InputType, Int, ObjectType, PickType } from '@nestjs/graphql';
 import { CoreOutput } from 'src/common/dtos/output.dto';
 import { NeedQuestion } from '../entities/need-question.entity';
 
@@ -10,4 +10,7 @@ export class CreateNeedQuestionInput extends PickType(NeedQuestion, [
 ]) {}
 
 @ObjectType()
-export class CreateNeedQuestionOutput extends CoreOutput {}
+export class CreateNeedQuestionOutput extends CoreOutput {
+  @Field((type) => Int, { nullable: true })
+  needQuestionId?: number;
+}
