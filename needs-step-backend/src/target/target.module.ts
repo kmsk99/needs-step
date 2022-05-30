@@ -1,8 +1,13 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { MeasureTarget } from './entities/measuare-target.entity';
+import { TargetName } from './entities/target-name.entity';
+import { Target } from './entities/target.entity';
 import { TargetResolver } from './target.resolver';
 import { TargetService } from './target.service';
 
 @Module({
-  providers: [TargetResolver, TargetService]
+  imports: [TypeOrmModule.forFeature([Target, TargetName, MeasureTarget])],
+  providers: [TargetResolver, TargetService],
 })
 export class TargetModule {}

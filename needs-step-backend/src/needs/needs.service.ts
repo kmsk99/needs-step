@@ -147,11 +147,13 @@ export class NeedService {
   }
 
   async createNeedQuestion(
+    authUser: User,
     createNeedQuestionInput: CreateNeedQuestionInput,
   ): Promise<CreateNeedQuestionOutput> {
     try {
       const newNeedQuestion = this.needQuestions.create({
         ...createNeedQuestionInput,
+        user: authUser,
       });
       await this.needQuestions.save(newNeedQuestion);
       return {
@@ -198,12 +200,10 @@ export class NeedService {
     }
   }
 
-  async editNeedQuestion({
-    needQuestionId,
-    content,
-    stage,
-    subStage,
-  }: EditNeedQuestionInput): Promise<EditNeedQuestionOutput> {
+  async editNeedQuestion(
+    authUser: User,
+    { needQuestionId, content, stage, subStage }: EditNeedQuestionInput,
+  ): Promise<EditNeedQuestionOutput> {
     try {
       const needQuestion = await this.needQuestions.findOne(needQuestionId);
       if (!needQuestion) {
@@ -217,6 +217,7 @@ export class NeedService {
         content,
         stage,
         subStage,
+        user: authUser,
       });
       return {
         ok: true,

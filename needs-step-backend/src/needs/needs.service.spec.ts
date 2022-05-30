@@ -1,8 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import exp from 'constants';
-import { async } from 'rxjs';
-import { User, UserRole } from 'src/users/entities/user.entity';
+import { User } from 'src/users/entities/user.entity';
 import { Repository } from 'typeorm';
 import { MeasureNeed } from './entities/measure-need.entity';
 import { NeedQuestion } from './entities/need-question.entity';
@@ -56,19 +54,18 @@ describe('NeedService', () => {
   });
 
   describe('Need', () => {
+    const userArgs = {
+      id: 1,
+    } as User;
+
+    const dateArgs = { date: '2020-01-01' };
+
+    const needArgs = {
+      user: userArgs,
+      date: dateArgs.date,
+      id: 1,
+    } as Need;
     describe('createNeed', () => {
-      const userArgs = {
-        id: 1,
-      } as User;
-
-      const dateArgs = { date: '2020-01-01' };
-
-      const needArgs = {
-        user: userArgs,
-        date: dateArgs.date,
-        id: 1,
-      } as Need;
-
       it('success', async () => {
         needsRepository.create.mockReturnValue(needArgs);
         needsRepository.save.mockResolvedValue(needArgs);
@@ -102,18 +99,6 @@ describe('NeedService', () => {
     });
 
     describe('findNeedByDate', () => {
-      const userArgs = {
-        id: 1,
-      } as User;
-
-      const dateArgs = { date: '2020-01-01' };
-
-      const needArgs = {
-        user: userArgs,
-        date: dateArgs.date,
-        id: 1,
-      } as Need;
-
       it('success', async () => {
         needsRepository.findOne.mockResolvedValue(needArgs);
 
@@ -166,13 +151,6 @@ describe('NeedService', () => {
     });
 
     describe('myNeed', () => {
-      const userArgs = {
-        id: 1,
-      } as User;
-      const needArgs = {
-        id: 1,
-      } as Need;
-
       it('success', async () => {
         needsRepository.find.mockResolvedValue([needArgs]);
 
@@ -214,18 +192,6 @@ describe('NeedService', () => {
     });
 
     describe('deleteNeed', () => {
-      const userArgs = {
-        id: 1,
-      } as User;
-
-      const dateArgs = { date: '2020-01-01' };
-
-      const needArgs = {
-        user: userArgs,
-        date: dateArgs.date,
-        id: 1,
-      } as Need;
-
       it('success', async () => {
         needsRepository.findOne.mockResolvedValue(needArgs);
         needsRepository.delete.mockResolvedValue(undefined);
@@ -283,23 +249,33 @@ describe('NeedService', () => {
   });
 
   describe('NeedQuestion', () => {
-    describe('createNeedQuestion', () => {
-      const needQuestionArgs = {
-        stage: 1,
-        subStage: 1,
-        content: 'contents',
-      } as NeedQuestion;
+    const userArgs = {
+      id: 1,
+    } as User;
 
+    const needQuestionArgs = {
+      stage: 1,
+      subStage: 1,
+      content: 'contents',
+    } as NeedQuestion;
+
+    describe('createNeedQuestion', () => {
       it('success', async () => {
         needQuestionsRepository.save.mockResolvedValue(undefined);
         needQuestionsRepository.create.mockReturnValue(needQuestionArgs);
 
-        const result = await service.createNeedQuestion(needQuestionArgs);
+        const result = await service.createNeedQuestion(
+          userArgs,
+          needQuestionArgs,
+        );
 
         expect(needQuestionsRepository.save).toBeCalledTimes(1);
         expect(needQuestionsRepository.save).toBeCalledWith(needQuestionArgs);
 
-        expect(needQuestionsRepository.create).toBeCalledWith(needQuestionArgs);
+        expect(needQuestionsRepository.create).toBeCalledWith({
+          ...needQuestionArgs,
+          user: userArgs,
+        });
         expect(needQuestionsRepository.create).toBeCalledTimes(1);
 
         expect(result).toEqual({ ok: true });
@@ -309,12 +285,18 @@ describe('NeedService', () => {
         needQuestionsRepository.save.mockRejectedValue(new Error());
         needQuestionsRepository.create.mockReturnValue(needQuestionArgs);
 
-        const result = await service.createNeedQuestion(needQuestionArgs);
+        const result = await service.createNeedQuestion(
+          userArgs,
+          needQuestionArgs,
+        );
 
         expect(needQuestionsRepository.save).toBeCalledTimes(1);
         expect(needQuestionsRepository.save).toBeCalledWith(needQuestionArgs);
 
-        expect(needQuestionsRepository.create).toBeCalledWith(needQuestionArgs);
+        expect(needQuestionsRepository.create).toBeCalledWith({
+          ...needQuestionArgs,
+          user: userArgs,
+        });
         expect(needQuestionsRepository.create).toBeCalledTimes(1);
 
         expect(result).toEqual({
@@ -325,12 +307,6 @@ describe('NeedService', () => {
     });
 
     describe('allNeedQuestions', () => {
-      const needQuestionArgs = {
-        stage: 1,
-        subStage: 1,
-        content: 'contents',
-      } as NeedQuestion;
-
       it('success', async () => {
         needQuestionsRepository.find.mockResolvedValue([needQuestionArgs]);
 
@@ -358,11 +334,6 @@ describe('NeedService', () => {
     });
 
     describe('findNeedQuestionsByStage', () => {
-      const needQuestionArgs = {
-        stage: 1,
-        subStage: 1,
-        content: 'contents',
-      } as NeedQuestion;
       const findNeedQuestionsInput = {
         stage: 1,
       };
@@ -402,11 +373,6 @@ describe('NeedService', () => {
     });
 
     describe('editNeedQuestion', () => {
-      const needQuestionArgs = {
-        stage: 1,
-        subStage: 1,
-        content: 'contents',
-      } as NeedQuestion;
       const editNeedQuestionsInput = {
         needQuestionId: 1,
         stage: 1,
@@ -418,7 +384,10 @@ describe('NeedService', () => {
         needQuestionsRepository.findOne.mockResolvedValue(needQuestionArgs);
         needQuestionsRepository.save.mockResolvedValue(undefined);
 
-        const result = await service.editNeedQuestion(editNeedQuestionsInput);
+        const result = await service.editNeedQuestion(
+          userArgs,
+          editNeedQuestionsInput,
+        );
 
         expect(needQuestionsRepository.findOne).toBeCalledTimes(1);
         expect(needQuestionsRepository.findOne).toBeCalledWith(
@@ -431,6 +400,7 @@ describe('NeedService', () => {
           content: editNeedQuestionsInput.content,
           subStage: editNeedQuestionsInput.subStage,
           stage: editNeedQuestionsInput.stage,
+          user: userArgs,
         });
 
         expect(result).toEqual({ ok: true });
@@ -439,7 +409,10 @@ describe('NeedService', () => {
       it('need question not found', async () => {
         needQuestionsRepository.findOne.mockResolvedValue(undefined);
 
-        const result = await service.editNeedQuestion(editNeedQuestionsInput);
+        const result = await service.editNeedQuestion(
+          userArgs,
+          editNeedQuestionsInput,
+        );
 
         expect(needQuestionsRepository.findOne).toBeCalledTimes(1);
         expect(needQuestionsRepository.findOne).toBeCalledWith(
@@ -455,7 +428,10 @@ describe('NeedService', () => {
       it('fail on exception', async () => {
         needQuestionsRepository.findOne.mockRejectedValue(new Error());
 
-        const result = await service.editNeedQuestion(editNeedQuestionsInput);
+        const result = await service.editNeedQuestion(
+          userArgs,
+          editNeedQuestionsInput,
+        );
 
         expect(needQuestionsRepository.findOne).toBeCalledTimes(1);
         expect(needQuestionsRepository.findOne).toBeCalledWith(
@@ -470,11 +446,6 @@ describe('NeedService', () => {
     });
 
     describe('deleteNeedQuestion', () => {
-      const needQuestionArgs = {
-        stage: 1,
-        subStage: 1,
-        content: 'contents',
-      } as NeedQuestion;
       const deleteNeedQuestionsInput = {
         needQuestionId: 1,
       };
@@ -541,30 +512,32 @@ describe('NeedService', () => {
   });
 
   describe('MeasureNeed', () => {
-    describe('createMeasureNeed', () => {
-      const userArgs = {
-        id: 1,
-      } as User;
-      const needArgs = {
-        id: 1,
-        userId: 1,
-        date: '2020-01-01',
-      } as Need;
-      const needQustionArgs = {
-        id: 1,
-      } as NeedQuestion;
-      const measureNeedArgs = {
-        id: 1,
-      } as MeasureNeed;
-      const createMeasureNeedInput = {
-        date: '2020-01-01',
-        needQuestionId: 1,
-        score: 1,
-      };
-      const otherUserArgs = {
-        id: 2,
-      } as User;
+    const userArgs = {
+      id: 1,
+    } as User;
+    const needQustionArgs = {
+      id: 1,
+    } as NeedQuestion;
+    const measureNeedArgs = {
+      id: 1,
+      userId: 1,
+    } as MeasureNeed;
+    const needArgs = {
+      id: 1,
+      userId: 1,
+      date: '2020-01-01',
+      measureNeeds: [measureNeedArgs],
+    } as Need;
+    const createMeasureNeedInput = {
+      date: '2020-01-01',
+      needQuestionId: 1,
+      score: 1,
+    };
+    const otherUserArgs = {
+      id: 2,
+    } as User;
 
+    describe('createMeasureNeed', () => {
       it('success', async () => {
         jest
           .spyOn(service, 'findNeedByDate')
@@ -669,19 +642,9 @@ describe('NeedService', () => {
     });
 
     describe('findMeasureNeed', () => {
-      const userArgs = {
-        id: 1,
-      } as User;
-      const measureNeedArgs = {
-        id: 1,
-        userId: 1,
-      } as MeasureNeed;
       const findMeasureNeedInput = {
         measureNeedId: 1,
       };
-      const otherUserArgs = {
-        id: 2,
-      } as User;
 
       it('success', async () => {
         measureNeedsRepository.findOne.mockResolvedValue(measureNeedArgs);
@@ -758,22 +721,7 @@ describe('NeedService', () => {
     });
 
     describe('findMeasureNeedsByNeed', () => {
-      const userArgs = {
-        id: 1,
-      } as User;
-      const measureNeedArgs = {
-        id: 1,
-      } as MeasureNeed;
       const dateArgs = { date: '2020-01-01' };
-      const needArgs = {
-        id: 1,
-        userId: 1,
-        date: dateArgs.date,
-        measureNeeds: [measureNeedArgs],
-      } as Need;
-      const otherUserArgs = {
-        id: 2,
-      } as User;
 
       const queryArgs = (authUser: User, date: string) => {
         return { where: { date, user: authUser }, relations: ['measureNeeds'] };
@@ -826,21 +774,10 @@ describe('NeedService', () => {
     });
 
     describe('editMeasureNeed', () => {
-      const userArgs = {
-        id: 1,
-      } as User;
-      const measureNeedArgs = {
-        id: 1,
-        score: 2,
-        userId: 1,
-      } as MeasureNeed;
       const editMeasureNeedInput = {
         measureNeedId: 1,
         score: 1,
       };
-      const otherUserArgs = {
-        id: 2,
-      } as User;
 
       it('success', async () => {
         measureNeedsRepository.findOne.mockResolvedValue(measureNeedArgs);
@@ -924,19 +861,9 @@ describe('NeedService', () => {
     });
 
     describe('deleteMeasureNeed', () => {
-      const userArgs = {
-        id: 1,
-      } as User;
-      const measureNeedArgs = {
-        id: 1,
-        userId: 1,
-      } as MeasureNeed;
       const deleteMeasureNeedInput = {
         measureNeedId: 1,
       };
-      const otherUserArgs = {
-        id: 2,
-      } as User;
 
       it('success', async () => {
         measureNeedsRepository.findOne.mockResolvedValue(measureNeedArgs);

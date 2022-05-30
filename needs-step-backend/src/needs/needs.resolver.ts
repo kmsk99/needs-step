@@ -77,9 +77,13 @@ export class NeedQuestionResolver {
   @Mutation((returns) => CreateNeedQuestionOutput)
   @Role(['Admin'])
   async createNeedQuestion(
+    @AuthUser() authUser: User,
     @Args('input') createNeedQuestionInput: CreateNeedQuestionInput,
   ): Promise<CreateNeedQuestionOutput> {
-    return this.needService.createNeedQuestion(createNeedQuestionInput);
+    return this.needService.createNeedQuestion(
+      authUser,
+      createNeedQuestionInput,
+    );
   }
 
   @Query((returns) => NeedQuestionsOutput)
@@ -99,9 +103,10 @@ export class NeedQuestionResolver {
   @Mutation((returns) => EditNeedQuestionOutput)
   @Role(['Admin'])
   async editNeedQuestion(
+    @AuthUser() authUser: User,
     @Args('input') editNeedQuestionInput: EditNeedQuestionInput,
   ): Promise<EditNeedQuestionOutput> {
-    return this.needService.editNeedQuestion(editNeedQuestionInput);
+    return this.needService.editNeedQuestion(authUser, editNeedQuestionInput);
   }
 
   @Mutation((returns) => DeleteNeedQuestionOutput)

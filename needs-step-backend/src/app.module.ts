@@ -16,6 +16,9 @@ import { Need } from './needs/entities/need.entity';
 import { NeedQuestion } from './needs/entities/need-question.entity';
 import { MeasureNeed } from './needs/entities/measure-need.entity';
 import { TargetModule } from './target/target.module';
+import { Target } from './target/entities/target.entity';
+import { TargetName } from './target/entities/target-name.entity';
+import { MeasureTarget } from './target/entities/measuare-target.entity';
 
 @Module({
   imports: [
@@ -51,7 +54,16 @@ import { TargetModule } from './target/target.module';
       logging:
         process.env.NODE_ENV !== 'production' &&
         process.env.NODE_ENV !== 'test',
-      entities: [User, Verification, Need, NeedQuestion, MeasureNeed],
+      entities: [
+        User,
+        Verification,
+        Need,
+        NeedQuestion,
+        MeasureNeed,
+        Target,
+        TargetName,
+        MeasureTarget,
+      ],
     }),
     GraphQLModule.forRoot({
       playground: process.env.NODE_ENV !== 'production',

@@ -10,6 +10,7 @@ import { CoreEntity } from 'src/common/entities/core.entity';
 import { InternalServerErrorException } from '@nestjs/common';
 import { IsBoolean, IsEmail, IsEnum, IsString } from 'class-validator';
 import { Need } from 'src/needs/entities/need.entity';
+import { Target } from 'src/target/entities/target.entity';
 export enum UserRole {
   Admin = 'Admin',
   Premium = 'Premium',
@@ -51,6 +52,10 @@ export class User extends CoreEntity {
   @Field((type) => [Need])
   @OneToMany((type) => Need, (need) => need.user)
   needs: Need[];
+
+  @Field((type) => [Target])
+  @OneToMany((type) => Target, (target) => target.user)
+  targets: Target[];
 
   @BeforeInsert()
   @BeforeUpdate()
