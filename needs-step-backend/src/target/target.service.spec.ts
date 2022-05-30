@@ -243,7 +243,7 @@ describe('TargetService', () => {
 
         expect(result).toEqual({
           ok: false,
-          error: 'Could not delete Target',
+          error: 'Could not delete target',
         });
       });
     });

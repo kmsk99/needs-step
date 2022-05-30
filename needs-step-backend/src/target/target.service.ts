@@ -143,18 +143,19 @@ export class TargetService {
     } catch {
       return {
         ok: false,
-        error: 'Could not delete Target',
+        error: 'Could not delete target',
       };
     }
   }
-  // 여기부터 수정
+
   async createTargetName(
     authUser: User,
-    createTargetNameInput: CreateTargetNameInput,
+    { content, positive }: CreateTargetNameInput,
   ): Promise<CreateTargetNameOutput> {
     try {
       const newTargetName = this.targetNames.create({
-        ...createTargetNameInput,
+        content,
+        positive,
         user: authUser,
       });
       await this.targetNames.save(newTargetName);
@@ -172,7 +173,7 @@ export class TargetService {
 
   async myTargetNames(authUser: User): Promise<TargetNamesOutput> {
     try {
-      const targetNames = await this.targetNames.find();
+      const targetNames = await this.targetNames.find({ user: authUser });
       return {
         ok: true,
         targetNames,
@@ -195,6 +196,12 @@ export class TargetService {
         return {
           ok: false,
           error: 'Target name not found',
+        };
+      }
+      if (targetName.userId !== authUser.id) {
+        return {
+          ok: false,
+          error: "You can't edit a target name that you dont't own",
         };
       }
       await this.targetNames.save({
@@ -226,6 +233,12 @@ export class TargetService {
           error: 'Target name not found',
         };
       }
+      if (targetName.userId !== authUser.id) {
+        return {
+          ok: false,
+          error: "You can't delete a target name that you dont't own",
+        };
+      }
       await this.targetNames.delete(targetNameId);
       return {
         ok: true,
@@ -252,19 +265,26 @@ export class TargetService {
         };
       }
 
-      const currentTargetName = await this.targetNames.findOne(targetNameId);
+      const targetName = await this.targetNames.findOne(targetNameId);
 
-      if (!currentTargetName) {
+      if (!targetName) {
         return {
           ok: false,
           error: 'Target name not found',
         };
       }
 
+      if (target.userId !== authUser.id) {
+        return {
+          ok: false,
+          error: "You can't add a target name that you dont't own",
+        };
+      }
+
       const measureTarget = this.measureTargets.create({
         time,
         user: authUser,
-        targetName: currentTargetName,
+        targetName,
         target: target,
       });
 
@@ -320,19 +340,19 @@ export class TargetService {
     { date }: findMeasureTargetsByTargetInput,
   ): Promise<MeasureTargetsOutput> {
     try {
-      const currentTarget = await this.targets.findOne({
+      const target = await this.targets.findOne({
         where: { date, user: authUser },
         relations: ['measureTargets'],
       });
 
-      if (!currentTarget) {
+      if (!target) {
         return {
           ok: false,
           error: 'Target not found',
         };
       }
 
-      const measureTargets = currentTarget.measureTargets;
+      const measureTargets = target.measureTargets;
 
       return {
         ok: true,

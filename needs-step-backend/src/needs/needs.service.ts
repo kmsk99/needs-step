@@ -141,18 +141,20 @@ export class NeedService {
     } catch {
       return {
         ok: false,
-        error: 'Could not delete Need',
+        error: 'Could not delete need',
       };
     }
   }
 
   async createNeedQuestion(
     authUser: User,
-    createNeedQuestionInput: CreateNeedQuestionInput,
+    { content, stage, subStage }: CreateNeedQuestionInput,
   ): Promise<CreateNeedQuestionOutput> {
     try {
       const newNeedQuestion = this.needQuestions.create({
-        ...createNeedQuestionInput,
+        content,
+        stage,
+        subStage,
         user: authUser,
       });
       await this.needQuestions.save(newNeedQuestion);
@@ -267,11 +269,9 @@ export class NeedService {
         };
       }
 
-      const currentNeedQuestion = await this.needQuestions.findOne(
-        needQuestionId,
-      );
+      const needQuestion = await this.needQuestions.findOne(needQuestionId);
 
-      if (!currentNeedQuestion) {
+      if (!needQuestion) {
         return {
           ok: false,
           error: 'Need question not found',
@@ -281,7 +281,7 @@ export class NeedService {
       const measureNeed = this.measureNeeds.create({
         score,
         user: authUser,
-        needQuestion: currentNeedQuestion,
+        needQuestion,
         need: need,
       });
 
@@ -337,19 +337,19 @@ export class NeedService {
     { date }: findMeasureNeedsByNeedInput,
   ): Promise<MeasureNeedsOutput> {
     try {
-      const currentNeed = await this.needs.findOne({
+      const need = await this.needs.findOne({
         where: { date, user: authUser },
         relations: ['measureNeeds'],
       });
 
-      if (!currentNeed) {
+      if (!need) {
         return {
           ok: false,
           error: 'Need not found',
         };
       }
 
-      const measureNeeds = currentNeed.measureNeeds;
+      const measureNeeds = need.measureNeeds;
 
       return {
         ok: true,

@@ -242,7 +242,7 @@ describe('NeedService', () => {
 
         expect(result).toEqual({
           ok: false,
-          error: 'Could not delete Need',
+          error: 'Could not delete need',
         });
       });
     });
