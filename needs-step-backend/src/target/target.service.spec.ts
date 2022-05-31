@@ -527,6 +527,7 @@ describe('TargetService', () => {
     } as User;
     const targetNameArgs = {
       id: 1,
+      userId: 1,
     } as TargetName;
     const measureTargetArgs = {
       id: 1,

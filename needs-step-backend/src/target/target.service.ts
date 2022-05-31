@@ -274,7 +274,7 @@ export class TargetService {
         };
       }
 
-      if (target.userId !== authUser.id) {
+      if (targetName.userId !== authUser.id) {
         return {
           ok: false,
           error: "You can't add a target name that you dont't own",

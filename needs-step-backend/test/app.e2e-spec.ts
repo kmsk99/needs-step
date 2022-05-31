@@ -9,6 +9,9 @@ import { Verification } from 'src/users/entities/verification.entity';
 import { Need } from 'src/needs/entities/need.entity';
 import { NeedQuestion } from 'src/needs/entities/need-question.entity';
 import { MeasureNeed } from 'src/needs/entities/measure-need.entity';
+import { Target } from 'src/target/entities/target.entity';
+import { TargetName } from 'src/target/entities/target-name.entity';
+import { MeasureTarget } from 'src/target/entities/measuare-target.entity';
 
 jest.mock('got', () => {
   return {
@@ -39,6 +42,9 @@ describe('e2e', () => {
   let needsRepository: Repository<Need>;
   let needQuestionsRepository: Repository<NeedQuestion>;
   let measureNeedsRepository: Repository<MeasureNeed>;
+  let targetsRepository: Repository<Target>;
+  let targetNamesRepository: Repository<TargetName>;
+  let measureTargetsRepository: Repository<MeasureTarget>;
   let freeJwtToken: string;
   let adminJwtToken: string;
 
@@ -64,6 +70,15 @@ describe('e2e', () => {
     );
     measureNeedsRepository = module.get<Repository<MeasureNeed>>(
       getRepositoryToken(MeasureNeed),
+    );
+    targetsRepository = module.get<Repository<Target>>(
+      getRepositoryToken(Target),
+    );
+    targetNamesRepository = module.get<Repository<TargetName>>(
+      getRepositoryToken(TargetName),
+    );
+    measureTargetsRepository = module.get<Repository<MeasureTarget>>(
+      getRepositoryToken(MeasureTarget),
     );
     await app.init();
   });
@@ -648,9 +663,6 @@ describe('e2e', () => {
             myNeed {
               ok
               error
-              needs {
-                id
-              }
             }
           }
           `)
@@ -936,9 +948,6 @@ describe('e2e', () => {
             allNeedQuestions {
               ok
               error
-              needQuestions {
-                id
-              }
             }
           }
           `)
@@ -952,6 +961,7 @@ describe('e2e', () => {
             });
         });
       });
+
       describe('findNeedQuestionsByStage', () => {
         let testNeedQuestions: NeedQuestion[];
 
@@ -1213,7 +1223,7 @@ describe('e2e', () => {
           });
         });
 
-        it('should delete need question', () => {
+        it('should delete need question3', () => {
           return privateAdminTest(`
             mutation {
               deleteNeedQuestion(input:{
@@ -1595,7 +1605,7 @@ describe('e2e', () => {
               } = res;
               expect(ok).toBe(true);
               expect(error).toBe(null);
-              measureNeeds.forEach((measureNeed) => {
+              measureNeeds.forEach((measureNeed: MeasureTarget) => {
                 expect(measureNeed).toHaveProperty('id');
                 expect(measureNeed).toHaveProperty('score');
               });
@@ -1754,7 +1764,7 @@ describe('e2e', () => {
       });
 
       describe('deleteMeasureNeed', () => {
-        it('should delete measureNeeds', () => {
+        it('should delete measureNeed3', () => {
           return privateFreeTest(`
             mutation {
               deleteMeasureNeed(input:{
@@ -1836,6 +1846,1271 @@ describe('e2e', () => {
             mutation {
               deleteMeasureNeed(input:{
                 measureNeedId: ${measureNeedId2}
+              }) {
+                ok
+                error
+              }
+            }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: { data, errors },
+              } = res;
+              expect(data).toBe(null);
+              expect(errors).not.toHaveLength(0);
+            });
+        });
+      });
+    });
+  });
+
+  describe('TargetModule', () => {
+    const date1 = '2022-5-25';
+    const date2 = '2022-5-26';
+    const date3 = '2022-5-27';
+    let targetNameId1: number;
+    let targetNameId2: number;
+    let targetNameId3: number;
+
+    describe('Target', () => {
+      describe('findTargetByDate', () => {
+        it('should create target1', () => {
+          return privateFreeTest(`
+          query {
+            findTargetByDate(input:{
+              date: "${date1}"
+            }) {
+              ok
+              error
+              target {
+                id
+                date
+              }
+            }
+          }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    findTargetByDate: { ok, error, target },
+                  },
+                },
+              } = res;
+              expect(error).toBe(null);
+              expect(ok).toBe(true);
+              expect(target).toHaveProperty('id');
+              expect(target).toHaveProperty('date');
+            });
+        });
+
+        it('should create target2', () => {
+          return privateFreeTest(`
+          query {
+            findTargetByDate(input:{
+              date: "${date2}"
+            }) {
+              ok
+              error
+              target {
+                id
+                date
+              }
+            }
+          }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    findTargetByDate: { ok, error, target },
+                  },
+                },
+              } = res;
+              expect(error).toBe(null);
+              expect(ok).toBe(true);
+              expect(target).toHaveProperty('id');
+              expect(target).toHaveProperty('date');
+            });
+        });
+
+        it('should create target3', () => {
+          return privateFreeTest(`
+          query {
+            findTargetByDate(input:{
+              date: "${date3}"
+            }) {
+              ok
+              error
+              target {
+                id
+                date
+              }
+            }
+          }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    findTargetByDate: { ok, error, target },
+                  },
+                },
+              } = res;
+              expect(error).toBe(null);
+              expect(ok).toBe(true);
+              expect(target).toHaveProperty('id');
+              expect(target).toHaveProperty('date');
+            });
+        });
+
+        it('should fail if not logged in', () => {
+          return publicTest(`
+          query {
+            findTargetByDate(input:{
+              date: "${date1}"
+            }) {
+              ok
+              error
+            }
+          }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: { data, errors },
+              } = res;
+              expect(data).toBe(null);
+              expect(errors).not.toHaveLength(0);
+            });
+        });
+      });
+
+      describe('myTarget', () => {
+        let testTargets: Target[];
+
+        beforeAll(async () => {
+          testTargets = await targetsRepository.find({ select: ['id'] });
+        });
+
+        it('should find my target', () => {
+          return privateFreeTest(`
+          query {
+            myTarget {
+              ok
+              error
+              targets {
+                id
+              }
+            }
+          }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    myTarget: { ok, error, targets },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(true);
+              expect(error).toBe(null);
+              expect(targets).toEqual(testTargets);
+            });
+        });
+
+        it('should fail if not logged in', () => {
+          return publicTest(`
+          query {
+            myTarget {
+              ok
+              error
+            }
+          }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: { data, errors },
+              } = res;
+              expect(data).toBe(null);
+              expect(errors).not.toHaveLength(0);
+            });
+        });
+      });
+
+      describe('deleteTarget', () => {
+        it('should delete target3', () => {
+          return privateFreeTest(`
+          mutation {
+            deleteTarget(input:{
+              date: "${date3}"
+            }) {
+              ok
+              error
+            }
+          }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    deleteTarget: { ok, error },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(true);
+              expect(error).toBe(null);
+            });
+        });
+
+        it('should fail if not exists', () => {
+          return privateFreeTest(`
+          mutation {
+            deleteTarget(input:{
+              date: "${date3}"
+            }) {
+              ok
+              error
+            }
+          }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    deleteTarget: { ok, error },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(false);
+              expect(error).toBe('Target not found');
+            });
+        });
+
+        it('should fail if not logged in', () => {
+          return publicTest(`
+          mutation {
+            deleteTarget(input:{
+              date: "${date2}"
+            }) {
+              ok
+              error
+            }
+          }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: { data, errors },
+              } = res;
+              expect(data).toBe(null);
+              expect(errors).not.toHaveLength(0);
+            });
+        });
+      });
+    });
+
+    describe('TargetName', () => {
+      const targetNameArgs1 = {
+        positive: true,
+        content: 'target number 1',
+      };
+      const targetNameArgs2 = {
+        positive: false,
+        content: 'target number 1',
+      };
+      const targetNameArgs3 = {
+        positive: true,
+        content: 'target number 1',
+      };
+
+      describe('createTargetName', () => {
+        it('should create target name 1', () => {
+          return privateFreeTest(`
+          mutation {
+            createTargetName(input:{
+              positive: ${targetNameArgs1.positive},
+              content: "${targetNameArgs1.content}"
+            }) {
+              ok
+              error
+              targetNameId
+            }
+          }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    createTargetName: { ok, error, targetNameId },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(true);
+              expect(error).toBe(null);
+              expect(typeof targetNameId).toBe('number');
+              targetNameId1 = targetNameId;
+            });
+        });
+
+        it('should create target name 2', () => {
+          return privateFreeTest(`
+          mutation {
+            createTargetName(input:{
+              positive: ${targetNameArgs2.positive},
+              content: "${targetNameArgs2.content}"
+            }) {
+              ok
+              error
+              targetNameId
+            }
+          }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    createTargetName: { ok, error, targetNameId },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(true);
+              expect(error).toBe(null);
+              expect(typeof targetNameId).toBe('number');
+              targetNameId2 = targetNameId;
+            });
+        });
+
+        it('should create target name 3', () => {
+          return privateFreeTest(`
+          mutation {
+            createTargetName(input:{
+              positive: ${targetNameArgs3.positive},
+              content: "${targetNameArgs3.content}"
+            }) {
+              ok
+              error
+              targetNameId
+            }
+          }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    createTargetName: { ok, error, targetNameId },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(true);
+              expect(error).toBe(null);
+              expect(typeof targetNameId).toBe('number');
+              targetNameId3 = targetNameId;
+            });
+        });
+
+        it('should fail if not logged in', () => {
+          return publicTest(`
+          mutation {
+            createTargetName(input:{
+              positive: ${targetNameArgs3.positive},
+              content: "${targetNameArgs3.content}"
+            }) {
+              ok
+              error
+            }
+          }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: { data, errors },
+              } = res;
+              expect(data).toBe(null);
+              expect(errors).not.toHaveLength(0);
+            });
+        });
+      });
+
+      describe('myTargetNames', () => {
+        let testTargetNames: TargetName[];
+
+        beforeAll(async () => {
+          testTargetNames = await targetNamesRepository.find({
+            select: ['id'],
+          });
+        });
+
+        it('should find my target names', () => {
+          return privateFreeTest(`
+            query {
+              myTargetNames {
+                ok
+                error
+                targetNames {
+                  id
+                }
+              }
+            }
+            `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    myTargetNames: { ok, error, targetNames },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(true);
+              expect(error).toBe(null);
+              expect(targetNames).toEqual(testTargetNames);
+            });
+        });
+
+        it('should fail if not logged in', () => {
+          return publicTest(`
+            query {
+              myTargetNames {
+                ok
+                error
+              }
+            }
+            `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: { data, errors },
+              } = res;
+              expect(data).toBe(null);
+              expect(errors).not.toHaveLength(0);
+            });
+        });
+      });
+
+      describe('editTargetName', () => {
+        let testTargetName: TargetName;
+
+        beforeAll(async () => {
+          testTargetName = await targetNamesRepository.findOne({
+            select: ['id'],
+          });
+        });
+
+        it('should edit content', () => {
+          return privateFreeTest(`
+            mutation {
+              editTargetName(input:{
+                targetNameId:${testTargetName.id},
+                content: "edited target"
+              }){
+                ok
+                error
+              }
+            }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    editTargetName: { ok, error },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(true);
+              expect(error).toBe(null);
+            });
+        });
+
+        it('should edit positive', () => {
+          return privateFreeTest(`
+            mutation {
+              editTargetName(input:{
+                targetNameId:${testTargetName.id},
+                positive: false
+              }){
+                ok
+                error
+              }
+            }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    editTargetName: { ok, error },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(true);
+              expect(error).toBe(null);
+            });
+        });
+
+        it('should fail if not exists', () => {
+          return privateFreeTest(`
+            mutation {
+              editTargetName(input:{
+                targetNameId:666,
+                positive: false
+              }){
+                ok
+                error
+              }
+            }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    editTargetName: { ok, error },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(false);
+              expect(error).toBe('Target name not found');
+            });
+        });
+
+        it('should fail if not owned', () => {
+          return privateAdminTest(`
+            mutation {
+              editTargetName(input:{
+                targetNameId:${testTargetName.id},
+                positive: false
+              }){
+                ok
+                error
+              }
+            }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    editTargetName: { ok, error },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(false);
+              expect(error).toBe(
+                "You can't edit a target name that you dont't own",
+              );
+            });
+        });
+
+        it('should fail if not logged in', () => {
+          return publicTest(`
+            mutation {
+              editTargetName(input:{
+                targetNameId:${testTargetName.id},
+                positive: false
+              }){
+                ok
+                error
+              }
+            }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: { data, errors },
+              } = res;
+              expect(data).toBe(null);
+              expect(errors).not.toHaveLength(0);
+            });
+        });
+      });
+
+      describe('deleteTargetName', () => {
+        let testTargetName3: TargetName;
+        let testTargetName2: TargetName;
+
+        beforeAll(async () => {
+          testTargetName3 = await targetNamesRepository.findOne({
+            where: { id: 3 },
+            select: ['id'],
+          });
+
+          testTargetName2 = await targetNamesRepository.findOne({
+            where: { id: 2 },
+            select: ['id'],
+          });
+        });
+
+        it('should delete target name 3', () => {
+          return privateFreeTest(`
+            mutation {
+              deleteTargetName(input:{
+                targetNameId:${testTargetName3.id},
+              }){
+                ok
+                error
+              }
+            }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    deleteTargetName: { ok, error },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(true);
+              expect(error).toBe(null);
+            });
+        });
+
+        it('should fail if not exists', () => {
+          return privateFreeTest(`
+            mutation {
+              deleteTargetName(input:{
+                targetNameId:666,
+              }){
+                ok
+                error
+              }
+            }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    deleteTargetName: { ok, error },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(false);
+              expect(error).toBe('Target name not found');
+            });
+        });
+
+        it('should fail if not own', () => {
+          return privateAdminTest(`
+            mutation {
+              deleteTargetName(input:{
+                targetNameId:${testTargetName2.id},
+              }){
+                ok
+                error
+              }
+            }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    deleteTargetName: { ok, error },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(false);
+              expect(error).toBe(
+                "You can't delete a target name that you dont't own",
+              );
+            });
+        });
+
+        it('should fail if not logged in', () => {
+          return publicTest(`
+          mutation {
+            deleteTargetName(input:{
+              targetNameId:${testTargetName2.id},
+            }){
+              ok
+              error
+            }
+          }
+        `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: { data, errors },
+              } = res;
+              expect(data).toBe(null);
+              expect(errors).not.toHaveLength(0);
+            });
+        });
+      });
+    });
+
+    describe('MeasureTarget', () => {
+      let measureTargetId1: number;
+      let measureTargetId2: number;
+      let measureTargetId3: number;
+
+      describe('createMeasureTarget', () => {
+        it('should create measureTarget1', () => {
+          return privateFreeTest(`
+            mutation {
+              createMeasureTarget(input:{
+                date:"${date1}",
+                targetNameId:${targetNameId1},
+                time: 1
+              }){
+                ok
+                error
+                measureTargetId
+              }
+            }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    createMeasureTarget: { ok, error, measureTargetId },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(true);
+              expect(error).toBe(null);
+              expect(typeof measureTargetId).toBe('number');
+              measureTargetId1 = measureTargetId;
+            });
+        });
+
+        it('should create measureTarget2', () => {
+          return privateFreeTest(`
+            mutation {
+              createMeasureTarget(input:{
+                date:"${date1}",
+                targetNameId:${targetNameId2},
+                time: 2
+              }){
+                ok
+                error
+                measureTargetId
+              }
+            }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    createMeasureTarget: { ok, error, measureTargetId },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(true);
+              expect(error).toBe(null);
+              expect(typeof measureTargetId).toBe('number');
+              measureTargetId2 = measureTargetId;
+            });
+        });
+
+        it('should create measureTarget3', () => {
+          return privateFreeTest(`
+            mutation {
+              createMeasureTarget(input:{
+                date:"${date2}",
+                targetNameId:${targetNameId1},
+                time: 3
+              }){
+                ok
+                error
+                measureTargetId
+              }
+            }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    createMeasureTarget: { ok, error, measureTargetId },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(true);
+              expect(error).toBe(null);
+              expect(typeof measureTargetId).toBe('number');
+              measureTargetId3 = measureTargetId;
+            });
+        });
+
+        it('should fail if target name not exists', () => {
+          return privateFreeTest(`
+            mutation {
+              createMeasureTarget(input:{
+                date:"${date2}",
+                targetNameId:${targetNameId3},
+                time: 3
+              }){
+                ok
+                error
+              }
+            }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    createMeasureTarget: { ok, error },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(false);
+              expect(error).toBe('Target name not found');
+            });
+        });
+
+        it('should fail if target name not own', () => {
+          return privateAdminTest(`
+            mutation {
+              createMeasureTarget(input:{
+                date:"${date2}",
+                targetNameId:${targetNameId1},
+                time: 1
+              }){
+                ok
+                error
+              }
+            }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    createMeasureTarget: { ok, error },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(false);
+              expect(error).toBe(
+                "You can't add a target name that you dont't own",
+              );
+            });
+        });
+
+        it('should fail if not logged in', () => {
+          return publicTest(`
+            mutation {
+              createMeasureTarget(input:{
+                date:"${date2}",
+                targetNameId:${targetNameId1},
+                time: 1
+              }){
+                ok
+                error
+              }
+            }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: { data, errors },
+              } = res;
+              expect(data).toBe(null);
+              expect(errors).not.toHaveLength(0);
+            });
+        });
+      });
+
+      describe('findMeasureTarget', () => {
+        let testMeasureTarget: MeasureTarget;
+
+        beforeAll(async () => {
+          testMeasureTarget = await measureTargetsRepository.findOne({
+            where: { id: measureTargetId1 },
+            select: ['id', 'time'],
+          });
+        });
+
+        it('should find measure target', () => {
+          return privateFreeTest(`
+            query {
+              findMeasureTarget(input:{
+                measureTargetId: ${measureTargetId1}
+              }) {
+                ok
+                error
+                measureTarget {
+                  id
+                  time
+                }
+              }
+            }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    findMeasureTarget: { ok, error, measureTarget },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(true);
+              expect(error).toBe(null);
+              expect(measureTarget).toEqual(testMeasureTarget);
+            });
+        });
+
+        it('should fail if not exists', () => {
+          return privateFreeTest(`
+            query {
+              findMeasureTarget(input:{
+                measureTargetId: 666
+              }) {
+                ok
+                error
+              }
+            }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    findMeasureTarget: { ok, error },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(false);
+              expect(error).toBe('Measure target not found');
+            });
+        });
+
+        it('should fail if not mine', () => {
+          return privateAdminTest(`
+            query {
+              findMeasureTarget(input:{
+                measureTargetId: ${measureTargetId1}
+              }) {
+                ok
+                error
+              }
+            }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    findMeasureTarget: { ok, error },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(false);
+              expect(error).toBe(
+                "You can't find measure target that you dont't own",
+              );
+            });
+        });
+
+        it('should fail if not logged', () => {
+          return publicTest(`
+            query {
+              findMeasureTarget(input:{
+                measureTargetId: ${measureTargetId1}
+              }) {
+                ok
+                error
+              }
+            }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: { data, errors },
+              } = res;
+              expect(data).toBe(null);
+              expect(errors).not.toHaveLength(0);
+            });
+        });
+      });
+
+      describe('findMeasureTargetsByTarget', () => {
+        it('should find measure targets', () => {
+          return privateFreeTest(`
+            query {
+              findMeasureTargetsByTarget(input:{
+                date: "${date1}"
+              }) {
+                ok
+                error
+                measureTargets {
+                  id
+                  time
+                }
+              }
+            }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    findMeasureTargetsByTarget: { ok, error, measureTargets },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(true);
+              expect(error).toBe(null);
+              measureTargets.forEach((measureTarget: MeasureTarget) => {
+                expect(measureTarget).toHaveProperty('id');
+                expect(measureTarget).toHaveProperty('time');
+              });
+            });
+        });
+
+        it('should fail if not exists', () => {
+          return privateFreeTest(`
+            query {
+              findMeasureTargetsByTarget(input:{
+                date: "2000-01-01"
+              }) {
+                ok
+                error
+              }
+            }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    findMeasureTargetsByTarget: { ok, error },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(false);
+              expect(error).toBe('Target not found');
+            });
+        });
+
+        it('should fail if not logged in', () => {
+          return publicTest(`
+            query {
+              findMeasureTargetsByTarget(input:{
+                date: "${date1}"
+              }) {
+                ok
+                error
+              }
+            }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: { data, errors },
+              } = res;
+              expect(data).toBe(null);
+              expect(errors).not.toHaveLength(0);
+            });
+        });
+      });
+
+      describe('editMeasureTarget', () => {
+        it('should edit measure target time', () => {
+          return privateFreeTest(`
+            mutation {
+              editMeasureTarget(input:{
+                measureTargetId: ${measureTargetId1},
+                time: 5
+              }) {
+                ok
+                error
+              }
+            }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    editMeasureTarget: { ok, error },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(true);
+              expect(error).toBe(null);
+            });
+        });
+
+        it('should fail if not exists', () => {
+          return privateFreeTest(`
+            mutation {
+              editMeasureTarget(input:{
+                measureTargetId: 666,
+                time: 5
+              }) {
+                ok
+                error
+              }
+            }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    editMeasureTarget: { ok, error },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(false);
+              expect(error).toBe('Measure target not found');
+            });
+        });
+
+        it('should fail if not mine', () => {
+          return privateAdminTest(`
+            mutation {
+              editMeasureTarget(input:{
+                measureTargetId: ${measureTargetId1},
+                time: 5
+              }) {
+                ok
+                error
+              }
+            }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    editMeasureTarget: { ok, error },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(false);
+              expect(error).toBe(
+                "You can't edit a measure target that you dont't own",
+              );
+            });
+        });
+
+        it('should fail if not logged in', () => {
+          return publicTest(`
+            mutation {
+              editMeasureTarget(input:{
+                measureTargetId: ${measureTargetId1},
+                time: 5
+              }) {
+                ok
+                error
+              }
+            }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: { data, errors },
+              } = res;
+              expect(data).toBe(null);
+              expect(errors).not.toHaveLength(0);
+            });
+        });
+      });
+
+      describe('deleteMeasureTarget', () => {
+        it('should delete measure target3', () => {
+          return privateFreeTest(`
+            mutation {
+              deleteMeasureTarget(input:{
+                measureTargetId: ${measureTargetId3}
+              }) {
+                ok
+                error
+              }
+            }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    deleteMeasureTarget: { ok, error },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(true);
+              expect(error).toBe(null);
+            });
+        });
+
+        it('should fail if not exists', () => {
+          return privateFreeTest(`
+            mutation {
+              deleteMeasureTarget(input:{
+                measureTargetId: ${measureTargetId3}
+              }) {
+                ok
+                error
+              }
+            }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    deleteMeasureTarget: { ok, error },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(false);
+              expect(error).toBe('Measure target not found');
+            });
+        });
+
+        it('should fail if not mine', () => {
+          return privateAdminTest(`
+            mutation {
+              deleteMeasureTarget(input:{
+                measureTargetId: ${measureTargetId2}
+              }) {
+                ok
+                error
+              }
+            }
+          `)
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    deleteMeasureTarget: { ok, error },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(false);
+              expect(error).toBe(
+                "You can't delete a measure target that you dont't own",
+              );
+            });
+        });
+
+        it('should fail if not logged in', () => {
+          return publicTest(`
+            mutation {
+              deleteMeasureTarget(input:{
+                measureTargetId: ${measureTargetId2}
               }) {
                 ok
                 error
