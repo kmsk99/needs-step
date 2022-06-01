@@ -13,6 +13,10 @@ import { Verification } from './entities/verification.entity';
 import { VerifyEmailOutput } from './dtos/verify-email.dto';
 import { UserProfileOutput } from './dtos/user-profile.dto';
 import { MailService } from 'src/mail/mail.service';
+import {
+  DeleteAccountInput,
+  DeleteAccountOutput,
+} from './dtos/delete-account.dto';
 
 @Injectable()
 export class UserService {
@@ -148,6 +152,26 @@ export class UserService {
       return { ok: false, error: 'Verification not found.' };
     } catch (error) {
       return { ok: false, error: 'Could not verify email.' };
+    }
+  }
+
+  async deleteAccount(
+    authUser: User,
+    { email }: DeleteAccountInput,
+  ): Promise<DeleteAccountOutput> {
+    try {
+      if (authUser.email !== email) {
+        return {
+          ok: false,
+          error: 'Check your email address',
+        };
+      }
+
+      await this.users.delete(authUser.id);
+
+      return { ok: true };
+    } catch {
+      return { ok: false, error: 'Could not delete account.' };
     }
   }
 }

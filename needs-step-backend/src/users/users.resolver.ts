@@ -7,6 +7,10 @@ import {
   CreateAccountInput,
   CreateAccountOutput,
 } from './dtos/create-account.dto';
+import {
+  DeleteAccountInput,
+  DeleteAccountOutput,
+} from './dtos/delete-account.dto';
 import { EditProfileInput, EditProfileOutput } from './dtos/edit-profile.dto';
 import { LoginInput, LoginOutput } from './dtos/login.dto';
 import { UserProfileInput, UserProfileOutput } from './dtos/user-profile.dto';
@@ -32,7 +36,7 @@ export class UserResolver {
 
   @Query((returns) => User)
   @Role(['Any'])
-  me(@AuthUser() authUser: User) {
+  async me(@AuthUser() authUser: User) {
     return authUser;
   }
 
@@ -54,9 +58,18 @@ export class UserResolver {
   }
 
   @Mutation((returns) => VerifyEmailOutput)
-  verifyEmail(
+  async verifyEmail(
     @Args('input') { code }: VerifyEmailInput,
   ): Promise<VerifyEmailOutput> {
     return this.usersService.verifyEmail(code);
+  }
+
+  @Mutation((returns) => DeleteAccountOutput)
+  @Role(['Any'])
+  async deleteAccount(
+    @AuthUser() authUser: User,
+    @Args('input') deleteAccountInput: DeleteAccountInput,
+  ): Promise<DeleteAccountOutput> {
+    return this.usersService.deleteAccount(authUser, deleteAccountInput);
   }
 }

@@ -1,14 +1,14 @@
 version: '3.9'
 
 services:
-  database:
+  needs-step-database:
     image: postgres:14.2-alpine
     restart: unless-stopped
     container_name: needs-step-database
     environment: 
       CHOKIDAR_USEPOLLING: "true"
-      POSTGRES_USER: ${DB_USERNAME}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER: "${DB_USERNAME}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
       POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "${DB_USERNAME}"]

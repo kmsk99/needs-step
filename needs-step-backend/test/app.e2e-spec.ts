@@ -29,6 +29,12 @@ const freeUser = {
   password: '123456',
 };
 
+const deleteUser = {
+  email: 'delete@test.com',
+  username: 'delete',
+  password: '123456',
+};
+
 const adminUser = {
   email: 'admin@test.com',
   username: 'admin',
@@ -46,12 +52,15 @@ describe('e2e', () => {
   let targetNamesRepository: Repository<TargetName>;
   let measureTargetsRepository: Repository<MeasureTarget>;
   let freeJwtToken: string;
+  let deleteJwtToken: string;
   let adminJwtToken: string;
 
   const baseTest = () => request(app.getHttpServer()).post(GRAPHQL_ENDPOINT);
   const publicTest = (query: string) => baseTest().send({ query });
   const privateFreeTest = (query: string) =>
     baseTest().set('X-JWT', freeJwtToken).send({ query });
+  const privateDeleteTest = (query: string) =>
+    baseTest().set('X-JWT', deleteJwtToken).send({ query });
   const privateAdminTest = (query: string) =>
     baseTest().set('X-JWT', adminJwtToken).send({ query });
 
@@ -90,7 +99,7 @@ describe('e2e', () => {
 
   describe('UserModule', () => {
     describe('createAccount', () => {
-      it('should create account', () => {
+      it('should create free account', () => {
         return publicTest(`
         mutation {
           createAccount(input: {
@@ -98,6 +107,34 @@ describe('e2e', () => {
             password:"${freeUser.password}",
             username:"${freeUser.username}",
             role:Free
+          }) {
+            ok
+            error
+          }
+        }
+        `)
+          .expect(200)
+          .expect((res) => {
+            const {
+              body: {
+                data: {
+                  createAccount: { ok, error },
+                },
+              },
+            } = res;
+            expect(ok).toBe(true);
+            expect(error).toBe(null);
+          });
+      });
+
+      it('should create delete account', () => {
+        return publicTest(`
+        mutation {
+          createAccount(input: {
+            email:"${deleteUser.email}",
+            password:"${deleteUser.password}",
+            username:"${deleteUser.username}",
+            role:Premium
           }) {
             ok
             error
@@ -176,7 +213,7 @@ describe('e2e', () => {
     });
 
     describe('login', () => {
-      it('should login with correct credentials', () => {
+      it('should login free with correct credentials', () => {
         return publicTest(`
           mutation {
             login(input:{
@@ -200,6 +237,33 @@ describe('e2e', () => {
             expect(login.error).toBe(null);
             expect(login.token).toEqual(expect.any(String));
             freeJwtToken = login.token;
+          });
+      });
+
+      it('should login delete with correct credentials', () => {
+        return publicTest(`
+          mutation {
+            login(input:{
+              email:"${deleteUser.email}",
+              password:"${deleteUser.password}",
+            }) {
+              ok
+              error
+              token
+            }
+          }
+        `)
+          .expect(200)
+          .expect((res) => {
+            const {
+              body: {
+                data: { login },
+              },
+            } = res;
+            expect(login.ok).toBe(true);
+            expect(login.error).toBe(null);
+            expect(login.token).toEqual(expect.any(String));
+            deleteJwtToken = login.token;
           });
       });
 
@@ -493,6 +557,58 @@ describe('e2e', () => {
             } = res;
             expect(ok).toBe(false);
             expect(error).toBe('Verification not found.');
+          });
+      });
+    });
+
+    describe('deleteAccount', () => {
+      it('should delete account', async () => {
+        return privateDeleteTest(`
+            mutation {
+              deleteAccount(input:{
+                email: "${deleteUser.email}"
+              }) {
+                ok
+                error
+              }
+            }
+        `)
+          .expect(200)
+          .expect((res) => {
+            const {
+              body: {
+                data: {
+                  deleteAccount: { ok, error },
+                },
+              },
+            } = res;
+            expect(ok).toBe(true);
+            expect(error).toBe(null);
+          });
+      });
+
+      it('email is not matched', async () => {
+        return privateFreeTest(`
+            mutation {
+              deleteAccount(input:{
+                email: "not@matched.email"
+              }) {
+                ok
+                error
+              }
+            }
+        `)
+          .expect(200)
+          .expect((res) => {
+            const {
+              body: {
+                data: {
+                  deleteAccount: { ok, error },
+                },
+              },
+            } = res;
+            expect(ok).toBe(false);
+            expect(error).toBe('Check your email address');
           });
       });
     });

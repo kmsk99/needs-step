@@ -18,5 +18,6 @@ import { TargetService } from './target.service';
     TargetNameResolver,
     MeasureTargetResolver,
   ],
+  exports: [TargetService],
 })
 export class TargetModule {}

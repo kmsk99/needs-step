@@ -344,4 +344,44 @@ describe('UserService', () => {
       expect(result).toEqual({ ok: false, error: 'Could not verify email.' });
     });
   });
+
+  describe('deleteAccount', () => {
+    const userArgs = {
+      id: 1,
+      email: 'test@test.com',
+    } as User;
+    const sameEmail = { email: 'test@test.com' };
+    const otherEmail = { email: 'other@test.com' };
+
+    it('should delete an account', async () => {
+      usersRepository.delete.mockResolvedValue(undefined);
+
+      const result = await service.deleteAccount(userArgs, sameEmail);
+
+      expect(usersRepository.delete).toHaveBeenCalledTimes(1);
+      expect(usersRepository.delete).toHaveBeenCalledWith(userArgs.id);
+
+      expect(result).toEqual({ ok: true });
+    });
+
+    it('email is not matched', async () => {
+      const result = await service.deleteAccount(userArgs, otherEmail);
+
+      expect(result).toEqual({
+        ok: false,
+        error: 'Check your email address',
+      });
+    });
+
+    it('should fail on exception', async () => {
+      usersRepository.delete.mockRejectedValue(new Error());
+
+      const result = await service.deleteAccount(userArgs, sameEmail);
+
+      expect(usersRepository.delete).toHaveBeenCalledTimes(1);
+      expect(usersRepository.delete).toHaveBeenCalledWith(userArgs.id);
+
+      expect(result).toEqual({ ok: false, error: 'Could not delete account.' });
+    });
+  });
 });
